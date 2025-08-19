@@ -7,13 +7,14 @@ def get_node_removal_impact(graph, node_to_remove, centrality_metric_function):
 
     # compute old
     original_betweeness = centrality_metric_function(graph)
+    print(original_betweeness)
 
     # compute new
     temp_graph = graph.copy()
     temp_graph.remove_node(node_to_remove)
 
     new_betweeness = centrality_metric_function(temp_graph)
-
+    print(new_betweeness)
     # compare
     impact = {}
 
@@ -23,7 +24,7 @@ def get_node_removal_impact(graph, node_to_remove, centrality_metric_function):
 
         old_value = original_betweeness[node]
         new_value = new_betweeness.get(node, 0)
-        delta = old_value - new_value
+        delta = new_value - old_value
 
         impact[node] = delta
 
