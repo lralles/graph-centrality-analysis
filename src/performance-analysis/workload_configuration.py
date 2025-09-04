@@ -3,12 +3,13 @@ import networkx as nx
 
 # graph types being tested - additions here must be reflected in the get_graph_and_node_to_remove method (bellow)
 GRAPH_TYPES = [
-    "path", "cycle", "star", "complete", "wheel",
-    "grid", "erdos_renyi", "watts_strogatz", "barabasi_albert"
+    #"erdos_renyi", 
+    #"watts_strogatz", 
+    "barabasi_albert"
 ]
 
 # graph sizes being tested
-SIZES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+SIZES = [100]
 
 # centrality metrics being tested (each method takes a graph G as input)
 CENTRALITY_METRICS = {
