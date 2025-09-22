@@ -4,7 +4,7 @@ from matplotlib import cm, colors
 import networkx as nx
 
 # plot the resulting graphs
-def plot_result(result, pos_cache,save_plots = False, showLabels = False):
+def plot_result(result, pos_cache,save_plots = False, showLabels = False, save_path = None):
     label = result["label"]
     impact = result["impact"]
     G = result["graph"]
@@ -88,8 +88,10 @@ def plot_result(result, pos_cache,save_plots = False, showLabels = False):
     if save_plots:
         # save image to results
         safe_filename = label
-        filepath = f"../../results/random-graphs-impact/images/{safe_filename}.svg"
-        
+        if(save_path is None):
+            filepath = f"../../results/random-graphs-impact/images/{safe_filename}.svg"
+        else: 
+            filepath = f"{save_path}/{safe_filename}.svg"
         # Save the plot instead of showing it
         plt.savefig(filepath, dpi=300, bbox_inches='tight', facecolor='white', format='svg')
         plt.close()  # Close the figure to free memory

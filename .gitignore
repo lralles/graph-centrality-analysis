@@ -1,5 +1,8 @@
 venv
-assets
 __pycache__
 numpy
 pandas
+cli.spec
+dist
+build
+Read from TSV.svg
