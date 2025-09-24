@@ -2,8 +2,8 @@ name: Build and Release (Linux)
 
 on:
   push:
-    branches:
-      - main   # run when something merges to main
+    tags:
+      - "v*"   # run only on version tags
 
 jobs:
   build-linux:
