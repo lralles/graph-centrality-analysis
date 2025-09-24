@@ -29,12 +29,12 @@ jobs:
 
       - name: Build Windows executable
         run: |
-          pyinstaller --onefile src\application\main.py ^
-            --hidden-import=matplotlib.backends.backend_svg ^
-            --hidden-import=PIL._tkinter_finder ^
-            --paths=.
-          rename dist\main.exe main-windows.exe
-
+            pyinstaller --onefile src\application\main.py `
+                --hidden-import=matplotlib.backends.backend_svg `
+                --hidden-import=PIL._tkinter_finder `
+                --paths=.
+            Rename-Item dist\main.exe main-windows.exe
+            
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
