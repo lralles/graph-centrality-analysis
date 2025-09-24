@@ -8,9 +8,113 @@ matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import networkx as nx
+from typing import Any, Optional
 
-from read_file import read_file
 from node_removal_graph_analyser import get_node_removal_impact, centrality_functions
+
+
+class ToolbarView(ttk.Frame):
+    def __init__(self, master: tk.Misc, centrality_keys):
+        super().__init__(master, padding=(10, 10, 10, 6))
+
+        ttk.Label(self, text="Graph TSV file").grid(row=0, column=0, sticky=tk.W, padx=4, pady=4)
+        self.file_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.file_var, width=60, style="Tall.TEntry").grid(row=0, column=1, sticky=tk.W, padx=4, pady=4)
+        self.browse_button = ttk.Button(self, text="Browse", style="Tall.TButton")
+        self.browse_button.grid(row=0, column=2, padx=4, pady=4, sticky=tk.W)
+
+        ttk.Label(self, text="Edge 1 column").grid(row=1, column=0, sticky=tk.W, padx=4, pady=4)
+        self.edge1_var = tk.StringVar(value="edge1")
+        ttk.Entry(self, textvariable=self.edge1_var, width=20, style="Tall.TEntry").grid(row=1, column=1, sticky=tk.W, padx=4, pady=4)
+
+        ttk.Label(self, text="Edge 2 column").grid(row=1, column=2, sticky=tk.W, padx=4, pady=4)
+        self.edge2_var = tk.StringVar(value="edge2")
+        ttk.Entry(self, textvariable=self.edge2_var, width=20, style="Tall.TEntry").grid(row=1, column=3, sticky=tk.W, padx=4, pady=4)
+
+        ttk.Label(self, text="Weight column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
+        self.weight_var = tk.StringVar(value="weight")
+        ttk.Entry(self, textvariable=self.weight_var, width=20, style="Tall.TEntry").grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
+
+        ttk.Label(self, text="Removed nodes (space-separated)").grid(row=3, column=0, sticky=tk.W, padx=4, pady=4)
+        self.removed_nodes_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.removed_nodes_var, width=60, style="Tall.TEntry").grid(row=3, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
+
+        ttk.Label(self, text="Centrality measures").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
+        self.centrality_vars = {}
+        centralities_frame = ttk.Frame(self)
+        centralities_frame.grid(row=4, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
+        for i, key in enumerate(centrality_keys):
+            var = tk.BooleanVar(value=(key in ("degree", "betweenness", "closeness")))
+            cb = ttk.Checkbutton(centralities_frame, text=key, variable=var)
+            cb.grid(row=0, column=i, padx=4, pady=2, sticky=tk.W)
+            self.centrality_vars[key] = var
+
+        actions_frame = ttk.Frame(self)
+        actions_frame.grid(row=5, column=0, columnspan=4, sticky=tk.W, padx=0, pady=(6, 0))
+        self.run_button = ttk.Button(actions_frame, text="Run Analysis")
+        self.run_button.pack(side=tk.LEFT, padx=(0, 6))
+        self.save_button = ttk.Button(actions_frame, text="Save SVG As...")
+        self.save_button.pack(side=tk.LEFT, padx=(0, 6))
+        self.clear_button = ttk.Button(actions_frame, text="Clear")
+        self.clear_button.pack(side=tk.LEFT)
+
+
+class TableView(ttk.Frame):
+    def __init__(self, master: tk.Misc):
+        super().__init__(master)
+        columns = ("node", "new", "diff")
+        self.tree = ttk.Treeview(self, columns=columns, show="headings")
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=140, anchor=tk.W, stretch=True)
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        try:
+            self.tree.tag_configure('oddrow', background='#2a2d2e')
+        except Exception:
+            pass
+
+    def clear(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+    def populate(self, df: pd.DataFrame):
+        self.clear()
+        for idx, (node, row) in enumerate(df.iterrows()):
+            import numpy as _np
+            new_val = row.get("new", _np.nan)
+            diff_val = row.get("diff", _np.nan)
+            tag = 'oddrow' if idx % 2 else ''
+            self.tree.insert("", tk.END, values=(str(node), f"{new_val:.6f}", f"{diff_val:.6f}"), tags=(tag,))
+
+
+class PlotView(ttk.Frame):
+    def __init__(self, master: tk.Misc):
+        super().__init__(master)
+        self.figure = Figure(figsize=(5, 4), dpi=100)
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self)
+        self.canvas_widget = self.canvas.get_tk_widget()
+        self.canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+    def clear(self):
+        self.figure.clf()
+        self.canvas.draw_idle()
+
+    def draw_idle(self):
+        self.canvas.draw_idle()
+
+
+class StatusBarView(ttk.Frame):
+    def __init__(self, master: tk.Misc):
+        super().__init__(master, padding=(10, 6))
+        self.status_var = tk.StringVar(value="Idle")
+        ttk.Label(self, textvariable=self.status_var).pack(side=tk.LEFT)
+
+    def set_status(self, text: str):
+        self.status_var.set(text)
 
 
 class GraphAnalysisGUI(tk.Tk):
@@ -25,6 +129,9 @@ class GraphAnalysisGUI(tk.Tk):
         # cache for layouts used by plot_result
         self.pos_cache = {}
         self.last_save_dir = "."
+
+        # Wire controller after widgets exist
+        self._controller = GraphAnalysisController(self)
 
     def _init_style(self):
         style = ttk.Style(self)
@@ -76,93 +183,33 @@ class GraphAnalysisGUI(tk.Tk):
 
     def _build_widgets(self):
         # Top toolbar
-        toolbar = ttk.Frame(self, padding=(10, 10, 10, 6))
-        toolbar.pack(side=tk.TOP, fill=tk.X)
-
-        # File selection
-        ttk.Label(toolbar, text="Graph TSV file").grid(row=0, column=0, sticky=tk.W, padx=4, pady=4)
-        self.file_var = tk.StringVar()
-        file_entry = ttk.Entry(toolbar, textvariable=self.file_var, width=60, style="Tall.TEntry")
-        file_entry.grid(row=0, column=1, sticky=tk.W, padx=4, pady=4)
-        ttk.Button(toolbar, text="Browse", command=self._browse_file, style="Tall.TButton").grid(row=0, column=2, padx=4, pady=4, sticky=tk.W)
-
-        # Edge columns
-        ttk.Label(toolbar, text="Edge 1 column").grid(row=1, column=0, sticky=tk.W, padx=4, pady=4)
-        self.edge1_var = tk.StringVar(value="edge1")
-        ttk.Entry(toolbar, textvariable=self.edge1_var, width=20, style="Tall.TEntry").grid(row=1, column=1, sticky=tk.W, padx=4, pady=4)
-
-        ttk.Label(toolbar, text="Edge 2 column").grid(row=1, column=2, sticky=tk.W, padx=4, pady=4)
-        self.edge2_var = tk.StringVar(value="edge2")
-        ttk.Entry(toolbar, textvariable=self.edge2_var, width=20, style="Tall.TEntry").grid(row=1, column=3, sticky=tk.W, padx=4, pady=4)
-
-        # Weight column
-        ttk.Label(toolbar, text="Weight column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
-        self.weight_var = tk.StringVar(value="weight")
-        ttk.Entry(toolbar, textvariable=self.weight_var, width=20, style="Tall.TEntry").grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
-
-        # Removed nodes
-        ttk.Label(toolbar, text="Removed nodes (space-separated)").grid(row=3, column=0, sticky=tk.W, padx=4, pady=4)
-        self.removed_nodes_var = tk.StringVar()
-        ttk.Entry(toolbar, textvariable=self.removed_nodes_var, width=60, style="Tall.TEntry").grid(row=3, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
-
-        # Centralities checklist
-        ttk.Label(toolbar, text="Centrality measures").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
-        self.centrality_vars = {}
-        centralities_frame = ttk.Frame(toolbar)
-        centralities_frame.grid(row=4, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
-        for i, key in enumerate(centrality_functions.keys()):
-            var = tk.BooleanVar(value=(key in ("degree", "betweenness", "closeness")))
-            cb = ttk.Checkbutton(centralities_frame, text=key, variable=var)
-            cb.grid(row=0, column=i, padx=4, pady=2, sticky=tk.W)
-            self.centrality_vars[key] = var
-
-        # Action buttons
-        actions_frame = ttk.Frame(toolbar)
-        actions_frame.grid(row=5, column=0, columnspan=4, sticky=tk.W, padx=0, pady=(6, 0))
-        ttk.Button(actions_frame, text="Run Analysis", command=self._on_run).pack(side=tk.LEFT, padx=(0, 6))
-        ttk.Button(actions_frame, text="Save SVG As...", command=self._on_save_as).pack(side=tk.LEFT, padx=(0, 6))
-        ttk.Button(actions_frame, text="Clear", command=self._on_clear).pack(side=tk.LEFT)
+        self.toolbar = ToolbarView(self, list(centrality_functions.keys()))
+        self.toolbar.pack(side=tk.TOP, fill=tk.X)
+        self.toolbar.browse_button.configure(command=self._browse_file)
+        self.toolbar.run_button.configure(command=self._on_run)
+        self.toolbar.save_button.configure(command=self._on_save_as)
+        self.toolbar.clear_button.configure(command=self._on_clear)
 
         # Split view: resizable panes
         paned = ttk.Panedwindow(self, orient=tk.HORIZONTAL)
         paned.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         # Table
-        table_container = ttk.Frame(paned)
-        paned.add(table_container, weight=1)
-        columns = ("node", "new", "diff")
-        self.tree = ttk.Treeview(table_container, columns=columns, show="headings")
-        for col in columns:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, width=140, anchor=tk.W, stretch=True)
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar = ttk.Scrollbar(table_container, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscroll=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        # zebra striping tag
-        try:
-            self.tree.tag_configure('oddrow', background='#2a2d2e')
-        except Exception:
-            pass
+        self.table = TableView(paned)
+        paned.add(self.table, weight=1)
 
         # Plot area
-        plot_frame = ttk.Frame(paned)
-        paned.add(plot_frame, weight=1)
-        self.figure = Figure(figsize=(5, 4), dpi=100)
-        self.canvas = FigureCanvasTkAgg(self.figure, master=plot_frame)
-        self.canvas_widget = self.canvas.get_tk_widget()
-        self.canvas_widget.pack(fill=tk.BOTH, expand=True)
+        self.plot = PlotView(paned)
+        paned.add(self.plot, weight=1)
 
         # Status bar
-        status_bar = ttk.Frame(self, padding=(10, 6))
-        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.status_var = tk.StringVar(value="Idle")
-        ttk.Label(status_bar, textvariable=self.status_var).pack(side=tk.LEFT)
+        self.status = StatusBarView(self)
+        self.status.pack(side=tk.BOTTOM, fill=tk.X)
 
     def _browse_file(self):
         path = filedialog.askopenfilename(title="Select graph TSV", filetypes=[("TSV files", "*.tsv"), ("All files", "*.*")])
         if path:
-            self.file_var.set(path)
+            self.toolbar.file_var.set(path)
 
     def _on_run(self):
         # run in background to keep UI responsive
@@ -185,58 +232,60 @@ class GraphAnalysisGUI(tk.Tk):
             self.last_save_dir = os.path.dirname(path)
             # Use plot_result to save to selected folder; it names file by label
             # So we pass save_path to the directory and then rename if needed
-            file_path = self.file_var.get().strip()
+            file_path = self.toolbar.file_var.get().strip()
             if not file_path:
                 messagebox.showwarning("Save SVG", "Run an analysis first.")
                 return
             # Recreate and save latest plot based on last computed data by rerunning lightweight save
             # We call _run_analysis but that also computes; instead, save current figure to path
-            self.figure.savefig(path, dpi=300, bbox_inches='tight', facecolor='white', format='svg')
-            self.status_var.set(f"Saved: {path}")
+            self.plot.figure.savefig(path, dpi=300, bbox_inches='tight', facecolor='white', format='svg')
+            self.status.set_status(f"Saved: {path}")
         except Exception as e:
             messagebox.showerror("Save SVG", str(e))
 
     def _on_clear(self):
-        # Clear table
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        # Clear plot
-        self.figure.clf()
-        self.canvas.draw_idle()
-        self.status_var.set("Cleared")
+        self.table.clear()
+        self.plot.clear()
+        self.status.set_status("Cleared")
 
     def _run_analysis_safe(self):
         try:
-            self.status_var.set("Running analysis...")
+            self.status.set_status("Running analysis...")
             self._run_analysis()
-            self.status_var.set("Done")
+            self.status.set_status("Done")
         except Exception as e:
-            self.status_var.set("Error")
+            self.status.set_status("Error")
             messagebox.showerror("Error", str(e))
 
     def _run_analysis(self):
-        file_path = self.file_var.get().strip()
-        edge1 = self.edge1_var.get().strip() or "edge1"
-        edge2 = self.edge2_var.get().strip() or "edge2"
-        weight = self.weight_var.get().strip() or "weight"
-        removed_nodes = [n for n in self.removed_nodes_var.get().split() if n]
-        selected_cents = [k for k, v in self.centrality_vars.items() if v.get()]
+        # Delegate to controller for separation of concerns
+        self._controller.run_analysis()
 
-        if not file_path:
-            raise ValueError("Please select a TSV file")
-        if not removed_nodes:
-            raise ValueError("Please enter at least one removed node")
-        if not selected_cents:
-            raise ValueError("Please select at least one centrality measure")
+    def _populate_table(self, df: pd.DataFrame):
+        # kept for backward compatibility if called; delegate to TableView
+        self.table.populate(df)
 
+    
+class GraphLoader:
+    def load(self, edge1: str, edge2: str, weight: str, path: str) -> nx.Graph:
+        import networkx as nx
         # read file
-        G = read_file(edge1, edge2, weight, file_path)
+        df = pd.read_csv(path, sep="\t")
+        # build undirected graph
+        G = nx.Graph()
+        for _, row in df.iterrows():
+            if row[edge1] == row[edge2]:
+                continue
+            G.add_edge(row[edge1], row[edge2], weight=row[weight])
+        return G
 
-        # accumulate deltas and scores like CLI
+
+class CentralityAnalysisService:
+    def compute(self, G: nx.Graph, removed_nodes, selected_centralities) -> tuple[pd.DataFrame, dict[Any, float]]:
         overall_centrality_delta = {}
         overall_centrality_score = {}
 
-        for centrality in selected_cents:
+        for centrality in selected_centralities:
             _, node_removal_impact, new_centrality = get_node_removal_impact(
                 G, removed_nodes, centrality_functions[centrality]
             )
@@ -247,7 +296,6 @@ class GraphAnalysisGUI(tk.Tk):
             for k, v in new_centrality.items():
                 overall_centrality_score[k] = overall_centrality_score.get(k, 0) + v
 
-        # Build dataframe
         centrality_table = {}
         for node in overall_centrality_score:
             new_val = overall_centrality_score[node]
@@ -255,41 +303,25 @@ class GraphAnalysisGUI(tk.Tk):
             centrality_table[node] = {"new": new_val, "diff": diff}
 
         df = pd.DataFrame.from_dict(centrality_table, orient="index")
+        return df, overall_centrality_delta
 
-        # update table in UI thread
-        self.after(0, lambda: self._populate_table(df))
 
-        # render and save SVG using existing plot_result
-        result = {
-            "label": "Read from TSV",
-            "gtype": "Read from TSV",
-            "impact": overall_centrality_delta,
-            "graph": G,
-            "removed_nodes": removed_nodes,
-        }
+class LayoutCache:
+    def __init__(self):
+        self._cache = {}
 
-        # draw into Tk canvas
-        self._draw_matplotlib_graph(result)
+    def get(self, key) -> Optional[dict[Any, tuple[float, float]]]:
+        return self._cache.get(key)
 
-    def _populate_table(self, df: pd.DataFrame):
-        # clear
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+    def set(self, key, value) -> None:
+        self._cache[key] = value
 
-        # insert
-        for idx, (node, row) in enumerate(df.iterrows()):
-            new_val = row.get("new", np.nan)
-            diff_val = row.get("diff", np.nan)
-            tag = 'oddrow' if idx % 2 else ''
-            self.tree.insert("", tk.END, values=(str(node), f"{new_val:.6f}", f"{diff_val:.6f}"), tags=(tag,))
 
-    def _draw_matplotlib_graph(self, result):
-        # clear previous figure
-        self.figure.clf()
-        ax = self.figure.add_subplot(111)
+class PlotRenderer:
+    def __init__(self, layout_cache: LayoutCache):
+        self.layout_cache = layout_cache
 
-        # Recreate a minimal plot similar to plot_result for embedding
-        # We do not save here; just display
+    def render(self, figure: Figure, result: dict[str, Any]) -> None:
         from matplotlib import cm, colors
         import networkx as nx
 
@@ -298,13 +330,17 @@ class GraphAnalysisGUI(tk.Tk):
         removed_nodes = result["removed_nodes"]
         size = G.number_of_nodes()
 
+        figure.clf()
+        ax = figure.add_subplot(111)
+
         key = (result["gtype"], size)
-        if key not in self.pos_cache:
+        pos = self.layout_cache.get(key)
+        if pos is None:
             if size >= 500:
-                self.pos_cache[key] = nx.spring_layout(G, seed=42, k=1 / np.sqrt(size))
+                pos = nx.spring_layout(G, seed=42, k=1 / np.sqrt(size))
             else:
-                self.pos_cache[key] = nx.spring_layout(G, seed=42)
-        pos = self.pos_cache[key]
+                pos = nx.spring_layout(G, seed=42)
+            self.layout_cache.set(key, pos)
 
         max_abs = max((abs(v) for v in impact.values()), default=0.0)
         if max_abs == 0:
@@ -330,19 +366,6 @@ class GraphAnalysisGUI(tk.Tk):
             node_size = 200
             min_thick, max_thick = 0.4, 3.0
 
-        # edge widths from weights
-        if G.number_of_edges() > 0:
-            weights = [d.get("weight", 1.0) for _, _, d in G.edges(data=True)]
-            w = np.array(weights, dtype=float)
-            w_min = float(np.min(w))
-            w_max = float(np.max(w))
-            if w_max == w_min:
-                edge_widths = [0.5 * (min_thick + max_thick)] * len(weights)
-            else:
-                edge_widths = list(min_thick + (w - w_min) / (w_max - w_min) * (max_thick - min_thick))
-        else:
-            edge_widths = 0.6
-
         # Build edge lists and widths aligned to edges
         edges_all = list(G.edges())
         weights_all = [G[u][v].get("weight", 1.0) for u, v in edges_all]
@@ -357,7 +380,6 @@ class GraphAnalysisGUI(tk.Tk):
         else:
             widths_all = []
 
-        # Determine which edges touch removed nodes
         removed_set = set(removed_nodes)
         highlight_edges = []
         highlight_widths = []
@@ -372,8 +394,6 @@ class GraphAnalysisGUI(tk.Tk):
                 base_edges.append((u, v))
                 base_widths.append(w)
 
-        import networkx as nx
-        # Draw nodes first
         nx.draw_networkx_nodes(
             G,
             pos,
@@ -384,7 +404,6 @@ class GraphAnalysisGUI(tk.Tk):
             ax=ax,
         )
 
-        # Draw base edges
         if base_edges:
             nx.draw_networkx_edges(
                 G,
@@ -395,7 +414,6 @@ class GraphAnalysisGUI(tk.Tk):
                 ax=ax,
             )
 
-        # Draw highlighted edges (incident to removed nodes)
         if highlight_edges:
             nx.draw_networkx_edges(
                 G,
@@ -407,19 +425,55 @@ class GraphAnalysisGUI(tk.Tk):
                 ax=ax,
             )
 
-        # Draw labels
         nx.draw_networkx_labels(G, pos, ax=ax, font_size=8, font_color="#111")
         ax.set_title(result["label"])
-
-        # draw colorbar
         sm = cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
-        self.figure.colorbar(sm, ax=ax, fraction=0.04, pad=0.05).set_label("Δ centrality")
-
-        self.canvas.draw_idle()
+        figure.colorbar(sm, ax=ax, fraction=0.04, pad=0.05).set_label("Δ centrality")
 
 
-def main():
+class GraphAnalysisController:
+    def __init__(self, app: GraphAnalysisGUI):
+        self.app = app
+        self.loader = GraphLoader()
+        self.analysis = CentralityAnalysisService()
+        self.layout_cache = LayoutCache()
+        self.renderer = PlotRenderer(self.layout_cache)
+
+    def run_analysis(self) -> None:
+        file_path = self.app.toolbar.file_var.get().strip()
+        edge1 = self.app.toolbar.edge1_var.get().strip() or "edge1"
+        edge2 = self.app.toolbar.edge2_var.get().strip() or "edge2"
+        weight = self.app.toolbar.weight_var.get().strip() or "weight"
+        removed_nodes = [n for n in self.app.toolbar.removed_nodes_var.get().split() if n]
+        selected_cents = [k for k, v in self.app.toolbar.centrality_vars.items() if v.get()]
+
+        if not file_path:
+            raise ValueError("Please select a TSV file")
+        if not removed_nodes:
+            raise ValueError("Please enter at least one removed node")
+        if not selected_cents:
+            raise ValueError("Please select at least one centrality measure")
+
+        G = self.loader.load(edge1, edge2, weight, file_path)
+        df, impact = self.analysis.compute(G, removed_nodes, selected_cents)
+
+        # Update table on UI thread
+        self.app.after(0, lambda: self.app.table.populate(df))
+
+        # Render plot
+        result = {
+            "label": "Read from TSV",
+            "gtype": "Read from TSV",
+            "impact": impact,
+            "graph": G,
+            "removed_nodes": removed_nodes,
+        }
+        self.renderer.render(self.app.plot.figure, result)
+        self.app.plot.draw_idle()
+
+
+def main() -> None:
     app = GraphAnalysisGUI()
     app.mainloop()
 
