@@ -5,12 +5,12 @@ import pandas as pd
 import numpy as np
 import matplotlib
 matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from read_file import read_file
 from node_removal_graph_analyser import get_node_removal_impact, centrality_functions
-from graph_plot import plot_result
 
 
 class GraphAnalysisGUI(tk.Tk):
@@ -268,9 +268,6 @@ class GraphAnalysisGUI(tk.Tk):
             "removed_nodes": removed_nodes,
         }
 
-        # Save SVG to current directory and also draw in Tk canvas
-        plot_result(result, self.pos_cache, save_plots=True, showLabels=True, save_path=".")
-
         # draw into Tk canvas
         self._draw_matplotlib_graph(result)
 
@@ -315,7 +312,7 @@ class GraphAnalysisGUI(tk.Tk):
         else:
             norm = colors.TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
 
-        cmap = matplotlib.pyplot.get_cmap("bwr")
+        cmap = plt.get_cmap("bwr")
         node_colors = []
         for n in G.nodes():
             if n in removed_nodes:
@@ -346,23 +343,76 @@ class GraphAnalysisGUI(tk.Tk):
         else:
             edge_widths = 0.6
 
+        # Build edge lists and widths aligned to edges
+        edges_all = list(G.edges())
+        weights_all = [G[u][v].get("weight", 1.0) for u, v in edges_all]
+        if len(weights_all) > 0:
+            w = np.array(weights_all, dtype=float)
+            w_min = float(np.min(w))
+            w_max = float(np.max(w))
+            if w_max == w_min:
+                widths_all = [0.5 * (min_thick + max_thick)] * len(weights_all)
+            else:
+                widths_all = list(min_thick + (w - w_min) / (w_max - w_min) * (max_thick - min_thick))
+        else:
+            widths_all = []
+
+        # Determine which edges touch removed nodes
+        removed_set = set(removed_nodes)
+        highlight_edges = []
+        highlight_widths = []
+        base_edges = []
+        base_widths = []
+        for (e, w) in zip(edges_all, widths_all):
+            u, v = e
+            if u in removed_set or v in removed_set:
+                highlight_edges.append((u, v))
+                highlight_widths.append(w)
+            else:
+                base_edges.append((u, v))
+                base_widths.append(w)
+
         import networkx as nx
-        nx.draw(
+        # Draw nodes first
+        nx.draw_networkx_nodes(
             G,
             pos,
             node_color=node_colors,
             node_size=node_size,
-            edge_color="lightgrey",
-            width=edge_widths,
-            ax=ax,
-            with_labels=True,
             linewidths=0.8,
             edgecolors="black",
+            ax=ax,
         )
+
+        # Draw base edges
+        if base_edges:
+            nx.draw_networkx_edges(
+                G,
+                pos,
+                edgelist=base_edges,
+                edge_color="lightgrey",
+                width=base_widths,
+                ax=ax,
+            )
+
+        # Draw highlighted edges (incident to removed nodes)
+        if highlight_edges:
+            nx.draw_networkx_edges(
+                G,
+                pos,
+                edgelist=highlight_edges,
+                edge_color="orange",
+                style="dashed",
+                width=highlight_widths,
+                ax=ax,
+            )
+
+        # Draw labels
+        nx.draw_networkx_labels(G, pos, ax=ax, font_size=8, font_color="#111")
         ax.set_title(result["label"])
 
         # draw colorbar
-        sm = matplotlib.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm = cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
         self.figure.colorbar(sm, ax=ax, fraction=0.04, pad=0.05).set_label("Δ centrality")
 
