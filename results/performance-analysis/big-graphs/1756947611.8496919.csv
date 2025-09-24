@@ -1,7 +1,0 @@
-,graph,size,metric,error
-0,barabasi_albert,100,degree,too many values to unpack (expected 2)
-1,barabasi_albert,100,betweenness,too many values to unpack (expected 2)
-2,barabasi_albert,100,closeness,too many values to unpack (expected 2)
-3,barabasi_albert,100,eigenvector,too many values to unpack (expected 2)
-4,barabasi_albert,100,pagerank,too many values to unpack (expected 2)
-5,barabasi_albert,100,harmonic,too many values to unpack (expected 2)

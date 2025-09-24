@@ -19,45 +19,96 @@ class GraphAnalysisGUI(tk.Tk):
         self.title("Graph Node Removal Analysis")
         self.geometry("1100x700")
 
+        self._init_style()
         self._build_widgets()
 
         # cache for layouts used by plot_result
         self.pos_cache = {}
+        self.last_save_dir = "."
+
+    def _init_style(self):
+        style = ttk.Style(self)
+        # Prefer a modern built-in theme as base
+        try:
+            style.theme_use("clam")
+        except Exception:
+            pass
+        # Dark palette
+        bg = "#1e1e1e"           # window background
+        panel_bg = "#252526"      # panels
+        fg = "#dddddd"            # text
+        subtle = "#2d2d30"        # alternating rows / borders
+        accent = "#0e639c"        # buttons / focus
+
+        self.configure(background=bg)
+
+        style.configure("TFrame", background=bg)
+        style.configure("TPanedwindow", background=bg)
+        style.configure("TLabel", background=bg, foreground=fg)
+        style.configure("TButton", background=panel_bg, foreground=fg, padding=(10, 6))
+        style.map("TButton", background=[("active", "#3a3d41")])
+
+        # Taller controls to align heights
+        style.configure("Tall.TEntry", fieldbackground=panel_bg, foreground=fg, padding=(10, 6))
+        style.configure("Tall.TButton", background=panel_bg, foreground=fg, padding=(10, 6))
+
+        # Entry colors (ttk uses system, set through layout options)
+        style.configure("TEntry", fieldbackground=panel_bg, foreground=fg)
+
+        # Treeview dark styling
+        style.configure(
+            "Treeview",
+            background=panel_bg,
+            fieldbackground=panel_bg,
+            foreground=fg,
+            rowheight=24,
+            font=("Segoe UI", 10),
+            bordercolor=subtle,
+            lightcolor=subtle,
+            darkcolor=subtle,
+        )
+        style.configure("Treeview.Heading", background=subtle, foreground=fg, font=("Segoe UI", 10, "bold"))
+        style.map("Treeview", background=[("selected", "#094771")], foreground=[("selected", "#ffffff")])
+
+        # Paned sash
+        style.configure("Sash", background=subtle)
+
 
     def _build_widgets(self):
-        form = ttk.Frame(self, padding=10)
-        form.pack(side=tk.TOP, fill=tk.X)
+        # Top toolbar
+        toolbar = ttk.Frame(self, padding=(10, 10, 10, 6))
+        toolbar.pack(side=tk.TOP, fill=tk.X)
 
         # File selection
-        ttk.Label(form, text="Graph TSV file").grid(row=0, column=0, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(toolbar, text="Graph TSV file").grid(row=0, column=0, sticky=tk.W, padx=4, pady=4)
         self.file_var = tk.StringVar()
-        file_entry = ttk.Entry(form, textvariable=self.file_var, width=60)
+        file_entry = ttk.Entry(toolbar, textvariable=self.file_var, width=60, style="Tall.TEntry")
         file_entry.grid(row=0, column=1, sticky=tk.W, padx=4, pady=4)
-        ttk.Button(form, text="Browse", command=self._browse_file).grid(row=0, column=2, padx=4, pady=4)
+        ttk.Button(toolbar, text="Browse", command=self._browse_file, style="Tall.TButton").grid(row=0, column=2, padx=4, pady=4, sticky=tk.W)
 
         # Edge columns
-        ttk.Label(form, text="Edge 1 column").grid(row=1, column=0, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(toolbar, text="Edge 1 column").grid(row=1, column=0, sticky=tk.W, padx=4, pady=4)
         self.edge1_var = tk.StringVar(value="edge1")
-        ttk.Entry(form, textvariable=self.edge1_var, width=20).grid(row=1, column=1, sticky=tk.W, padx=4, pady=4)
+        ttk.Entry(toolbar, textvariable=self.edge1_var, width=20, style="Tall.TEntry").grid(row=1, column=1, sticky=tk.W, padx=4, pady=4)
 
-        ttk.Label(form, text="Edge 2 column").grid(row=1, column=2, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(toolbar, text="Edge 2 column").grid(row=1, column=2, sticky=tk.W, padx=4, pady=4)
         self.edge2_var = tk.StringVar(value="edge2")
-        ttk.Entry(form, textvariable=self.edge2_var, width=20).grid(row=1, column=3, sticky=tk.W, padx=4, pady=4)
+        ttk.Entry(toolbar, textvariable=self.edge2_var, width=20, style="Tall.TEntry").grid(row=1, column=3, sticky=tk.W, padx=4, pady=4)
 
         # Weight column
-        ttk.Label(form, text="Weight column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(toolbar, text="Weight column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
         self.weight_var = tk.StringVar(value="weight")
-        ttk.Entry(form, textvariable=self.weight_var, width=20).grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
+        ttk.Entry(toolbar, textvariable=self.weight_var, width=20, style="Tall.TEntry").grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
 
         # Removed nodes
-        ttk.Label(form, text="Removed nodes (space-separated)").grid(row=3, column=0, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(toolbar, text="Removed nodes (space-separated)").grid(row=3, column=0, sticky=tk.W, padx=4, pady=4)
         self.removed_nodes_var = tk.StringVar()
-        ttk.Entry(form, textvariable=self.removed_nodes_var, width=60).grid(row=3, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
+        ttk.Entry(toolbar, textvariable=self.removed_nodes_var, width=60, style="Tall.TEntry").grid(row=3, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
 
         # Centralities checklist
-        ttk.Label(form, text="Centrality measures").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
+        ttk.Label(toolbar, text="Centrality measures").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
         self.centrality_vars = {}
-        centralities_frame = ttk.Frame(form)
+        centralities_frame = ttk.Frame(toolbar)
         centralities_frame.grid(row=4, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
         for i, key in enumerate(centrality_functions.keys()):
             var = tk.BooleanVar(value=(key in ("degree", "betweenness", "closeness")))
@@ -65,38 +116,48 @@ class GraphAnalysisGUI(tk.Tk):
             cb.grid(row=0, column=i, padx=4, pady=2, sticky=tk.W)
             self.centrality_vars[key] = var
 
-        # Run button
-        run_btn = ttk.Button(form, text="Run Analysis", command=self._on_run)
-        run_btn.grid(row=5, column=0, padx=4, pady=8, sticky=tk.W)
+        # Action buttons
+        actions_frame = ttk.Frame(toolbar)
+        actions_frame.grid(row=5, column=0, columnspan=4, sticky=tk.W, padx=0, pady=(6, 0))
+        ttk.Button(actions_frame, text="Run Analysis", command=self._on_run).pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Button(actions_frame, text="Save SVG As...", command=self._on_save_as).pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Button(actions_frame, text="Clear", command=self._on_clear).pack(side=tk.LEFT)
 
-        # Status label
-        self.status_var = tk.StringVar(value="Idle")
-        ttk.Label(form, textvariable=self.status_var).grid(row=5, column=1, padx=4, pady=8, sticky=tk.W)
-
-        # Split view: table on left, plot on right
-        body = ttk.Frame(self, padding=10)
-        body.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        # Split view: resizable panes
+        paned = ttk.Panedwindow(self, orient=tk.HORIZONTAL)
+        paned.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         # Table
-        table_frame = ttk.Frame(body)
-        table_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        table_container = ttk.Frame(paned)
+        paned.add(table_container, weight=1)
         columns = ("node", "new", "diff")
-        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings")
+        self.tree = ttk.Treeview(table_container, columns=columns, show="headings")
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=140, anchor=tk.W)
+            self.tree.column(col, width=140, anchor=tk.W, stretch=True)
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        scrollbar = ttk.Scrollbar(table_container, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        # zebra striping tag
+        try:
+            self.tree.tag_configure('oddrow', background='#2a2d2e')
+        except Exception:
+            pass
 
         # Plot area
-        plot_frame = ttk.Frame(body)
-        plot_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        plot_frame = ttk.Frame(paned)
+        paned.add(plot_frame, weight=1)
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.figure, master=plot_frame)
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+        # Status bar
+        status_bar = ttk.Frame(self, padding=(10, 6))
+        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.status_var = tk.StringVar(value="Idle")
+        ttk.Label(status_bar, textvariable=self.status_var).pack(side=tk.LEFT)
 
     def _browse_file(self):
         path = filedialog.askopenfilename(title="Select graph TSV", filetypes=[("TSV files", "*.tsv"), ("All files", "*.*")])
@@ -108,6 +169,41 @@ class GraphAnalysisGUI(tk.Tk):
         thread = threading.Thread(target=self._run_analysis_safe)
         thread.daemon = True
         thread.start()
+
+    def _on_save_as(self):
+        try:
+            path = filedialog.asksaveasfilename(
+                title="Save SVG",
+                defaultextension=".svg",
+                filetypes=[("SVG", "*.svg")],
+                initialdir=self.last_save_dir,
+                initialfile="Read from TSV.svg",
+            )
+            if not path:
+                return
+            import os
+            self.last_save_dir = os.path.dirname(path)
+            # Use plot_result to save to selected folder; it names file by label
+            # So we pass save_path to the directory and then rename if needed
+            file_path = self.file_var.get().strip()
+            if not file_path:
+                messagebox.showwarning("Save SVG", "Run an analysis first.")
+                return
+            # Recreate and save latest plot based on last computed data by rerunning lightweight save
+            # We call _run_analysis but that also computes; instead, save current figure to path
+            self.figure.savefig(path, dpi=300, bbox_inches='tight', facecolor='white', format='svg')
+            self.status_var.set(f"Saved: {path}")
+        except Exception as e:
+            messagebox.showerror("Save SVG", str(e))
+
+    def _on_clear(self):
+        # Clear table
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        # Clear plot
+        self.figure.clf()
+        self.canvas.draw_idle()
+        self.status_var.set("Cleared")
 
     def _run_analysis_safe(self):
         try:
@@ -184,10 +280,11 @@ class GraphAnalysisGUI(tk.Tk):
             self.tree.delete(item)
 
         # insert
-        for node, row in df.iterrows():
+        for idx, (node, row) in enumerate(df.iterrows()):
             new_val = row.get("new", np.nan)
             diff_val = row.get("diff", np.nan)
-            self.tree.insert("", tk.END, values=(str(node), f"{new_val:.6f}", f"{diff_val:.6f}"))
+            tag = 'oddrow' if idx % 2 else ''
+            self.tree.insert("", tk.END, values=(str(node), f"{new_val:.6f}", f"{diff_val:.6f}"), tags=(tag,))
 
     def _draw_matplotlib_graph(self, result):
         # clear previous figure
