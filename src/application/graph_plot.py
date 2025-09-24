@@ -50,13 +50,26 @@ def plot_result(result, pos_cache,save_plots = False, showLabels = False, save_p
     # defined experimentally, based on the used graphs sizes
     if size >= 500:
         node_size = 10
-        edge_width = 0.2
+        min_thick, max_thick = 0.1, 0.8
     elif size >= 100:
         node_size = 25
-        edge_width = 0.3
+        min_thick, max_thick = 0.2, 1.2
     else:
         node_size = 200
-        edge_width = 0.6
+        min_thick, max_thick = 0.4, 3.0
+
+    # compute edge widths from weights
+    if G.number_of_edges() > 0:
+        weights = [d.get("weight", 1.0) for _, _, d in G.edges(data=True)]
+        w = np.array(weights, dtype=float)
+        w_min = float(np.min(w))
+        w_max = float(np.max(w))
+        if w_max == w_min:
+            edge_widths = [0.5 * (min_thick + max_thick)] * len(weights)
+        else:
+            edge_widths = list(min_thick + (w - w_min) / (w_max - w_min) * (max_thick - min_thick))
+    else:
+        edge_widths = 0.6
 
     # create figure
     # ax will be used for the colorbar scale
@@ -68,7 +81,7 @@ def plot_result(result, pos_cache,save_plots = False, showLabels = False, save_p
         node_color=node_colors,
         node_size=node_size,
         edge_color="lightgrey",
-        width=edge_width,
+        width=edge_widths,
         ax=ax,
         with_labels=showLabels,
         linewidths=0.8,

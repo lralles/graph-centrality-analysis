@@ -303,7 +303,6 @@ class GraphAnalysisGUI(tk.Tk):
 
         key = (result["gtype"], size)
         if key not in self.pos_cache:
-            import numpy as np
             if size >= 500:
                 self.pos_cache[key] = nx.spring_layout(G, seed=42, k=1 / np.sqrt(size))
             else:
@@ -326,13 +325,26 @@ class GraphAnalysisGUI(tk.Tk):
 
         if size >= 500:
             node_size = 10
-            edge_width = 0.2
+            min_thick, max_thick = 0.1, 0.8
         elif size >= 100:
             node_size = 25
-            edge_width = 0.3
+            min_thick, max_thick = 0.2, 1.2
         else:
             node_size = 200
-            edge_width = 0.6
+            min_thick, max_thick = 0.4, 3.0
+
+        # edge widths from weights
+        if G.number_of_edges() > 0:
+            weights = [d.get("weight", 1.0) for _, _, d in G.edges(data=True)]
+            w = np.array(weights, dtype=float)
+            w_min = float(np.min(w))
+            w_max = float(np.max(w))
+            if w_max == w_min:
+                edge_widths = [0.5 * (min_thick + max_thick)] * len(weights)
+            else:
+                edge_widths = list(min_thick + (w - w_min) / (w_max - w_min) * (max_thick - min_thick))
+        else:
+            edge_widths = 0.6
 
         import networkx as nx
         nx.draw(
@@ -341,7 +353,7 @@ class GraphAnalysisGUI(tk.Tk):
             node_color=node_colors,
             node_size=node_size,
             edge_color="lightgrey",
-            width=edge_width,
+            width=edge_widths,
             ax=ax,
             with_labels=True,
             linewidths=0.8,
