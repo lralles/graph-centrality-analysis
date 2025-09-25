@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import threading
+import os
 
 from src.gui.toolbar_view import ToolbarView
 from src.gui.table_view import TableView
@@ -113,7 +114,7 @@ class GraphAnalysisGUI(tk.Tk):
             )
             if not path:
                 return
-            import os
+
             self.last_save_dir = os.path.dirname(path)
             file_path = self.toolbar.file_var.get().strip()
             if not file_path:

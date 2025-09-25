@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from typing import Any
+from matplotlib import cm, colors
+import networkx as nx
 
 
 class PlotRenderer:
@@ -9,9 +11,6 @@ class PlotRenderer:
         self.layout_cache = layout_cache
 
     def render(self, figure: Figure, result: dict[str, Any]) -> None:
-        from matplotlib import cm, colors
-        import networkx as nx
-
         G = result["graph"]
         impact = result["impact"]
         removed_nodes = result["removed_nodes"]
