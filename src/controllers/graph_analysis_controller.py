@@ -16,6 +16,7 @@ class GraphAnalysisController:
         weight = self.app.toolbar.weight_var.get().strip() or "weight"
         removed_nodes = [n for n in self.app.toolbar.removed_nodes_var.get().split() if n]
         selected_cents = [k for k, v in self.app.toolbar.centrality_vars.items() if v.get()]
+        remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
 
         if not file_path:
             raise ValueError("Please select a TSV file")
@@ -24,7 +25,7 @@ class GraphAnalysisController:
         if not selected_cents:
             raise ValueError("Please select at least one centrality measure")
 
-        G = self.loader.load(edge1, edge2, weight, file_path)
+        G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges)
         df, impact = self.analysis.compute(G, removed_nodes, selected_cents)
 
         self.app.after(0, lambda: self.app.table.populate(df))

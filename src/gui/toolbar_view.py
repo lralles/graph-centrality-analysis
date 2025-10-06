@@ -23,6 +23,11 @@ class ToolbarView(ttk.Frame):
         self.weight_var = tk.StringVar(value="weight")
         ttk.Entry(self, textvariable=self.weight_var, width=20, style="Tall.TEntry").grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
 
+        # Self-edges removal option
+        self.remove_self_edges_var = tk.BooleanVar(value=True)
+        self.remove_self_edges_cb = ttk.Checkbutton(self, text="Remove self-edges (loops)", variable=self.remove_self_edges_var)
+        self.remove_self_edges_cb.grid(row=2, column=2, columnspan=2, sticky=tk.W, padx=4, pady=4)
+
         ttk.Label(self, text="Removed nodes (space-separated)").grid(row=3, column=0, sticky=tk.W, padx=4, pady=4)
         self.removed_nodes_var = tk.StringVar()
         ttk.Entry(self, textvariable=self.removed_nodes_var, width=60, style="Tall.TEntry").grid(row=3, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
