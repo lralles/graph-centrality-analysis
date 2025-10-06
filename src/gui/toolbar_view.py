@@ -12,16 +12,19 @@ class ToolbarView(ttk.Frame):
         self.browse_button.grid(row=0, column=2, padx=4, pady=4, sticky=tk.W)
 
         ttk.Label(self, text="Edge 1 column").grid(row=1, column=0, sticky=tk.W, padx=4, pady=4)
-        self.edge1_var = tk.StringVar(value="edge1")
-        ttk.Entry(self, textvariable=self.edge1_var, width=20, style="Tall.TEntry").grid(row=1, column=1, sticky=tk.W, padx=4, pady=4)
+        self.edge1_var = tk.StringVar()
+        self.edge1_combo = ttk.Combobox(self, textvariable=self.edge1_var, width=18, style="Tall.TCombobox", state="readonly")
+        self.edge1_combo.grid(row=1, column=1, sticky=tk.W, padx=4, pady=4)
 
         ttk.Label(self, text="Edge 2 column").grid(row=1, column=2, sticky=tk.W, padx=4, pady=4)
-        self.edge2_var = tk.StringVar(value="edge2")
-        ttk.Entry(self, textvariable=self.edge2_var, width=20, style="Tall.TEntry").grid(row=1, column=3, sticky=tk.W, padx=4, pady=4)
+        self.edge2_var = tk.StringVar()
+        self.edge2_combo = ttk.Combobox(self, textvariable=self.edge2_var, width=18, style="Tall.TCombobox", state="readonly")
+        self.edge2_combo.grid(row=1, column=3, sticky=tk.W, padx=4, pady=4)
 
         ttk.Label(self, text="Weight column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
-        self.weight_var = tk.StringVar(value="weight")
-        ttk.Entry(self, textvariable=self.weight_var, width=20, style="Tall.TEntry").grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
+        self.weight_var = tk.StringVar()
+        self.weight_combo = ttk.Combobox(self, textvariable=self.weight_var, width=18, style="Tall.TCombobox", state="readonly")
+        self.weight_combo.grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
 
         # Self-edges removal option
         self.remove_self_edges_var = tk.BooleanVar(value=True)
@@ -69,5 +72,11 @@ class ToolbarView(ttk.Frame):
         self.save_button.pack(side=tk.LEFT, padx=(0, 6))
         self.clear_button = ttk.Button(actions_frame, text="Clear")
         self.clear_button.pack(side=tk.LEFT)
+
+    def update_column_suggestions(self, columns):
+        """Update the dropdown options for column comboboxes"""
+        self.edge1_combo['values'] = columns
+        self.edge2_combo['values'] = columns
+        self.weight_combo['values'] = columns
 
 

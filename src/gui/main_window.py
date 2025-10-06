@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import threading
 import os
+import pandas as pd
 
 from src.gui.toolbar_view import ToolbarView
 from src.gui.table_view import TableView
@@ -59,6 +60,14 @@ class GraphAnalysisGUI(tk.Tk):
         style.configure("Tall.TButton", background=panel_bg, foreground=fg, padding=(10, 6))
         style.configure("TEntry", fieldbackground=panel_bg, foreground=fg)
 
+        # Combobox styles
+        style.configure("Tall.TCombobox", fieldbackground=panel_bg, foreground=fg, padding=(10, 6))
+        style.configure("TCombobox", fieldbackground=panel_bg, foreground=fg, background=panel_bg)
+        style.map("TCombobox",
+                  fieldbackground=[("readonly", panel_bg)],
+                  selectbackground=[("readonly", panel_bg)],
+                  selectforeground=[("readonly", fg)])
+
         style.configure(
             "Treeview",
             background=panel_bg,
@@ -99,6 +108,23 @@ class GraphAnalysisGUI(tk.Tk):
         path = filedialog.askopenfilename(title="Select graph TSV", filetypes=[("TSV files", "*.tsv"), ("All files", "*.*")])
         if path:
             self.toolbar.file_var.set(path)
+            # Read TSV to get column names for autocomplete
+            self._load_column_names(path)
+
+    def _load_column_names(self, path):
+        """Load column names from TSV file and update autocomplete suggestions"""
+        try:
+            # Read only the header row to get column names
+            df = pd.read_csv(path, sep='\t', nrows=0)
+            columns = df.columns.tolist()
+            # Update toolbar autocomplete (ToolbarView should provide this method)
+            if hasattr(self.toolbar, "update_column_suggestions"):
+                self.toolbar.update_column_suggestions(columns)
+            # Use existing status API to show message
+            if hasattr(self.status, "set_status"):
+                self.status.set_status(f"Loaded {len(columns)} columns from file")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to read column names from file:\n{str(e)}")
 
     def _on_run(self):
         thread = threading.Thread(target=self._run_analysis_safe)
