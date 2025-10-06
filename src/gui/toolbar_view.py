@@ -5,6 +5,12 @@ class ToolbarView(ttk.Frame):
     def __init__(self, master: tk.Misc, centrality_keys):
         super().__init__(master, padding=(10, 10, 10, 6))
 
+        # Optional callback that can be set by the controller to generate a preview
+        self.preview_callback = None
+
+        # Callback for when columns are selected
+        self.on_column_selected_callback = None
+
         ttk.Label(self, text="Graph TSV file").grid(row=0, column=0, sticky=tk.W, padx=4, pady=4)
         self.file_var = tk.StringVar()
         ttk.Entry(self, textvariable=self.file_var, width=60, style="Tall.TEntry").grid(row=0, column=1, sticky=tk.W, padx=4, pady=4)
@@ -15,20 +21,23 @@ class ToolbarView(ttk.Frame):
         self.edge1_var = tk.StringVar()
         self.edge1_combo = ttk.Combobox(self, textvariable=self.edge1_var, width=18, style="Tall.TCombobox", state="readonly")
         self.edge1_combo.grid(row=1, column=1, sticky=tk.W, padx=4, pady=4)
+        self.edge1_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
         ttk.Label(self, text="Edge 2 column").grid(row=1, column=2, sticky=tk.W, padx=4, pady=4)
         self.edge2_var = tk.StringVar()
         self.edge2_combo = ttk.Combobox(self, textvariable=self.edge2_var, width=18, style="Tall.TCombobox", state="readonly")
         self.edge2_combo.grid(row=1, column=3, sticky=tk.W, padx=4, pady=4)
+        self.edge2_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
         ttk.Label(self, text="Weight column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
         self.weight_var = tk.StringVar()
         self.weight_combo = ttk.Combobox(self, textvariable=self.weight_var, width=18, style="Tall.TCombobox", state="readonly")
         self.weight_combo.grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
+        self.weight_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
         # Self-edges removal option
         self.remove_self_edges_var = tk.BooleanVar(value=True)
-        self.remove_self_edges_cb = ttk.Checkbutton(self, text="Remove self-edges (loops)", variable=self.remove_self_edges_var)
+        self.remove_self_edges_cb = ttk.Checkbutton(self, text="Remove self-edges (loops)", variable=self.remove_self_edges_var, command=self._on_column_selected)
         self.remove_self_edges_cb.grid(row=2, column=2, columnspan=2, sticky=tk.W, padx=4, pady=4)
 
         ttk.Label(self, text="Removed nodes (space-separated)").grid(row=3, column=0, sticky=tk.W, padx=4, pady=4)
@@ -78,5 +87,14 @@ class ToolbarView(ttk.Frame):
         self.edge1_combo['values'] = columns
         self.edge2_combo['values'] = columns
         self.weight_combo['values'] = columns
+
+    def _on_column_selected(self, _event=None):
+        """Called when a column is selected in any combobox"""
+        if self.on_column_selected_callback:
+            self.on_column_selected_callback()
+
+    def set_column_selected_callback(self, callback):
+        """Set the callback function for when columns are selected"""
+        self.on_column_selected_callback = callback
 
 

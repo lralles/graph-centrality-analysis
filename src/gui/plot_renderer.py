@@ -55,11 +55,19 @@ class PlotRenderer:
 
         cmap = plt.get_cmap("bwr")
         node_colors = []
+
+        # Check if this is a preview (no impact data)
+        has_impact_data = impact and any(impact.values())
+
         for n in G.nodes():
             if n in removed_nodes:
                 node_colors.append("yellow")
-            else:
+            elif has_impact_data:
+                # Use impact-based coloring for analysis
                 node_colors.append(cmap(norm(impact.get(n, 0.0))))
+            else:
+                # Use neutral color for preview
+                node_colors.append("lightblue")
 
         if size >= 500:
             node_size = 10
@@ -149,8 +157,11 @@ class PlotRenderer:
             nx.draw_networkx_labels(G, pos, ax=ax, font_size=8, font_color="#111")
 
         ax.set_title(result["label"])
-        sm = cm.ScalarMappable(cmap=cmap, norm=norm)
-        sm.set_array([])
-        figure.colorbar(sm, ax=ax, fraction=0.04, pad=0.05).set_label("Δ centrality")
+
+        # Only show colorbar if there's impact data (not for preview)
+        if impact and any(impact.values()):
+            sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm.set_array([])
+            figure.colorbar(sm, ax=ax, fraction=0.04, pad=0.05).set_label("Δ centrality")
 
 

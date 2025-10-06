@@ -91,6 +91,7 @@ class GraphAnalysisGUI(tk.Tk):
         self.toolbar.refresh_plot_button.configure(command=self._on_refresh_plot)
         self.toolbar.save_button.configure(command=self._on_save_as)
         self.toolbar.clear_button.configure(command=self._on_clear)
+        self.toolbar.set_column_selected_callback(self._on_column_selected)
 
         paned = ttk.Panedwindow(self, orient=tk.HORIZONTAL)
         paned.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
@@ -114,17 +115,18 @@ class GraphAnalysisGUI(tk.Tk):
     def _load_column_names(self, path):
         """Load column names from TSV file and update autocomplete suggestions"""
         try:
-            # Read only the header row to get column names
+            # Read only the first row to get column names
             df = pd.read_csv(path, sep='\t', nrows=0)
             columns = df.columns.tolist()
-            # Update toolbar autocomplete (ToolbarView should provide this method)
-            if hasattr(self.toolbar, "update_column_suggestions"):
-                self.toolbar.update_column_suggestions(columns)
-            # Use existing status API to show message
-            if hasattr(self.status, "set_status"):
-                self.status.set_status(f"Loaded {len(columns)} columns from file")
+            self.toolbar.update_column_suggestions(columns)
+            self.status.set_status(f"Loaded {len(columns)} columns from file")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to read column names from file:\n{str(e)}")
+
+    def _on_column_selected(self):
+        """Called when a column is selected - trigger preview generation"""
+        if hasattr(self, '_controller'):
+            self._controller.generate_preview()
 
     def _on_run(self):
         thread = threading.Thread(target=self._run_analysis_safe)

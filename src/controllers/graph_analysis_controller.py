@@ -9,6 +9,41 @@ class GraphAnalysisController:
         self.layout_cache = layout_cache
         self.renderer = renderer
 
+    def generate_preview(self) -> None:
+        file_path = self.app.toolbar.file_var.get().strip()
+        edge1 = self.app.toolbar.edge1_var.get().strip()
+        edge2 = self.app.toolbar.edge2_var.get().strip()
+        weight = self.app.toolbar.weight_var.get().strip()
+        remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
+
+        if not file_path or not edge1 or not edge2 or not weight:
+            return
+
+        try:
+            G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges)
+
+            preview_result = {
+                "label": "Graph Preview",
+                "gtype": "Preview",
+                "impact": {},  # Empty impact for preview
+                "graph": G,
+                "removed_nodes": [],  # No removed nodes in preview
+            }
+
+            preview_options = {
+                "show_node_names": True,
+                "edge_thickness_by_weight": True,
+                "mark_removed_edges": False,
+            }
+
+            self.renderer.render(self.app.plot.figure, preview_result, preview_options)
+            self.app.plot.canvas.draw()
+
+            self.app.status.set_status(f"Preview loaded: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+
+        except Exception as e:
+            self.app.status.set_status(f"Preview failed: {str(e)}")
+
     def run_analysis(self) -> None:
         file_path = self.app.toolbar.file_var.get().strip()
         edge1 = self.app.toolbar.edge1_var.get().strip() or "edge1"
@@ -49,6 +84,5 @@ class GraphAnalysisController:
         }
 
         self.renderer.render(self.app.plot.figure, result, plot_options)
-        self.app.plot.draw_idle()
 
 
