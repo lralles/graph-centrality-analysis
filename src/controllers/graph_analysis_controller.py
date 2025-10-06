@@ -37,7 +37,18 @@ class GraphAnalysisController:
             "graph": G,
             "removed_nodes": removed_nodes,
         }
-        self.renderer.render(self.app.plot.figure, result)
+
+        # Store the result for later refresh
+        self.app.last_analysis_result = result
+
+        # Get current plot options
+        plot_options = {
+            "show_node_names": self.app.toolbar.show_node_names_var.get(),
+            "edge_thickness_by_weight": self.app.toolbar.edge_thickness_by_weight_var.get(),
+            "mark_removed_edges": self.app.toolbar.mark_removed_edges_var.get(),
+        }
+
+        self.renderer.render(self.app.plot.figure, result, plot_options)
         self.app.plot.draw_idle()
 
 

@@ -10,7 +10,26 @@ class PlotRenderer:
     def __init__(self, layout_cache):
         self.layout_cache = layout_cache
 
-    def render(self, figure: Figure, result: dict[str, Any]) -> None:
+    def render(self, figure: Figure, result: dict[str, Any], plot_options: dict[str, bool] = None) -> None:
+        """
+        Render the graph plot with configurable options.
+
+        Args:
+            figure: The matplotlib figure to render on
+            result: Dictionary containing graph, impact, removed_nodes, etc.
+            plot_options: Dictionary with keys:
+                - show_node_names: Whether to display node labels
+                - edge_thickness_by_weight: Whether edge thickness reflects weight
+                - mark_removed_edges: Whether to highlight edges connected to removed nodes
+        """
+        # Default plot options
+        if plot_options is None:
+            plot_options = {
+                "show_node_names": True,
+                "edge_thickness_by_weight": True,
+                "mark_removed_edges": True,
+            }
+
         G = result["graph"]
         impact = result["impact"]
         removed_nodes = result["removed_nodes"]
@@ -54,30 +73,45 @@ class PlotRenderer:
 
         edges_all = list(G.edges())
         weights_all = [G[u][v].get("weight", 1.0) for u, v in edges_all]
-        if len(weights_all) > 0:
-            w = np.array(weights_all, dtype=float)
-            w_min = float(np.min(w))
-            w_max = float(np.max(w))
-            if w_max == w_min:
-                widths_all = [0.5 * (min_thick + max_thick)] * len(weights_all)
-            else:
-                widths_all = list(min_thick + (w - w_min) / (w_max - w_min) * (max_thick - min_thick))
-        else:
-            widths_all = []
 
+        # Calculate edge widths based on plot options
+        if plot_options.get("edge_thickness_by_weight", True):
+            if len(weights_all) > 0:
+                w = np.array(weights_all, dtype=float)
+                w_min = float(np.min(w))
+                w_max = float(np.max(w))
+                if w_max == w_min:
+                    widths_all = [0.5 * (min_thick + max_thick)] * len(weights_all)
+                else:
+                    widths_all = list(min_thick + (w - w_min) / (w_max - w_min) * (max_thick - min_thick))
+            else:
+                widths_all = []
+        else:
+            # Use uniform edge width
+            uniform_width = 0.5 * (min_thick + max_thick)
+            widths_all = [uniform_width] * len(edges_all)
+
+        # Separate edges based on whether they connect to removed nodes
         removed_set = set(removed_nodes)
         highlight_edges = []
         highlight_widths = []
         base_edges = []
         base_widths = []
-        for (e, w) in zip(edges_all, widths_all):
-            u, v = e
-            if u in removed_set or v in removed_set:
-                highlight_edges.append((u, v))
-                highlight_widths.append(w)
-            else:
-                base_edges.append((u, v))
-                base_widths.append(w)
+
+        if plot_options.get("mark_removed_edges", True):
+            # Separate edges connected to removed nodes
+            for (e, w) in zip(edges_all, widths_all):
+                u, v = e
+                if u in removed_set or v in removed_set:
+                    highlight_edges.append((u, v))
+                    highlight_widths.append(w)
+                else:
+                    base_edges.append((u, v))
+                    base_widths.append(w)
+        else:
+            # Treat all edges the same
+            base_edges = edges_all
+            base_widths = widths_all
 
         nx.draw_networkx_nodes(
             G,
@@ -110,7 +144,10 @@ class PlotRenderer:
                 ax=ax,
             )
 
-        nx.draw_networkx_labels(G, pos, ax=ax, font_size=8, font_color="#111")
+        # Draw node labels based on plot options
+        if plot_options.get("show_node_names", True):
+            nx.draw_networkx_labels(G, pos, ax=ax, font_size=8, font_color="#111")
+
         ax.set_title(result["label"])
         sm = cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])

@@ -26,6 +26,7 @@ class GraphAnalysisGUI(tk.Tk):
 
         self.pos_cache = {}
         self.last_save_dir = "."
+        self.last_analysis_result = None  # Store the last analysis result
 
         self._controller = GraphAnalysisController(
             app=self,
@@ -78,6 +79,7 @@ class GraphAnalysisGUI(tk.Tk):
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.toolbar.browse_button.configure(command=self._browse_file)
         self.toolbar.run_button.configure(command=self._on_run)
+        self.toolbar.refresh_plot_button.configure(command=self._on_refresh_plot)
         self.toolbar.save_button.configure(command=self._on_save_as)
         self.toolbar.clear_button.configure(command=self._on_clear)
 
@@ -102,6 +104,20 @@ class GraphAnalysisGUI(tk.Tk):
         thread = threading.Thread(target=self._run_analysis_safe)
         thread.daemon = True
         thread.start()
+
+    def _on_refresh_plot(self):
+        """Refresh the plot with current options without re-running analysis"""
+        if self.last_analysis_result is None:
+            messagebox.showwarning("Refresh Plot", "Please run an analysis first.")
+            return
+
+        try:
+            self.status.set_status("Refreshing plot...")
+            self._render_plot()
+            self.status.set_status("Plot refreshed")
+        except Exception as e:
+            messagebox.showerror("Refresh Plot Error", str(e))
+            self.status.set_status("Error refreshing plot")
 
     def _on_save_as(self):
         try:
@@ -128,6 +144,7 @@ class GraphAnalysisGUI(tk.Tk):
     def _on_clear(self):
         self.table.clear()
         self.plot.clear()
+        self.last_analysis_result = None
         self.status.set_status("Cleared")
 
     def _run_analysis_safe(self):
@@ -141,5 +158,19 @@ class GraphAnalysisGUI(tk.Tk):
 
     def _run_analysis(self):
         self._controller.run_analysis()
+
+    def _render_plot(self):
+        """Render the plot with current plot options"""
+        if self.last_analysis_result is None:
+            return
+
+        plot_options = {
+            "show_node_names": self.toolbar.show_node_names_var.get(),
+            "edge_thickness_by_weight": self.toolbar.edge_thickness_by_weight_var.get(),
+            "mark_removed_edges": self.toolbar.mark_removed_edges_var.get(),
+        }
+
+        self._controller.renderer.render(self.plot.figure, self.last_analysis_result, plot_options)
+        self.plot.draw_idle()
 
 

@@ -42,10 +42,29 @@ class ToolbarView(ttk.Frame):
             cb.grid(row=0, column=i, padx=4, pady=2, sticky=tk.W)
             self.centrality_vars[key] = var
 
+        # Plot options
+        ttk.Label(self, text="Plot options").grid(row=5, column=0, sticky=tk.NW, padx=4, pady=4)
+        plot_options_frame = ttk.Frame(self)
+        plot_options_frame.grid(row=5, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
+
+        self.show_node_names_var = tk.BooleanVar(value=True)
+        self.show_node_names_cb = ttk.Checkbutton(plot_options_frame, text="Show node names", variable=self.show_node_names_var)
+        self.show_node_names_cb.grid(row=0, column=0, padx=4, pady=2, sticky=tk.W)
+
+        self.edge_thickness_by_weight_var = tk.BooleanVar(value=True)
+        self.edge_thickness_by_weight_cb = ttk.Checkbutton(plot_options_frame, text="Edge thickness by weight", variable=self.edge_thickness_by_weight_var)
+        self.edge_thickness_by_weight_cb.grid(row=0, column=1, padx=4, pady=2, sticky=tk.W)
+
+        self.mark_removed_edges_var = tk.BooleanVar(value=True)
+        self.mark_removed_edges_cb = ttk.Checkbutton(plot_options_frame, text="Mark removed edges", variable=self.mark_removed_edges_var)
+        self.mark_removed_edges_cb.grid(row=0, column=2, padx=4, pady=2, sticky=tk.W)
+
         actions_frame = ttk.Frame(self)
-        actions_frame.grid(row=5, column=0, columnspan=4, sticky=tk.W, padx=0, pady=(6, 0))
+        actions_frame.grid(row=6, column=0, columnspan=4, sticky=tk.W, padx=0, pady=(6, 0))
         self.run_button = ttk.Button(actions_frame, text="Run Analysis")
         self.run_button.pack(side=tk.LEFT, padx=(0, 6))
+        self.refresh_plot_button = ttk.Button(actions_frame, text="Refresh Plot")
+        self.refresh_plot_button.pack(side=tk.LEFT, padx=(0, 6))
         self.save_button = ttk.Button(actions_frame, text="Save SVG As...")
         self.save_button.pack(side=tk.LEFT, padx=(0, 6))
         self.clear_button = ttk.Button(actions_frame, text="Clear")
