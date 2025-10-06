@@ -48,10 +48,25 @@ class ToolbarView(ttk.Frame):
         self.centrality_vars = {}
         centralities_frame = ttk.Frame(self)
         centralities_frame.grid(row=4, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
+
+        # Create user-friendly display names for centrality measures
+        centrality_display_names = {
+            "degree": "Degree (Normalized)",
+            "unnormalized_degree": "Degree (Unnormalized)",
+            "betweenness": "Betweenness",
+            "closeness": "Closeness",
+            "eigenvector": "Eigenvector",
+            "katz": "Katz"
+        }
+
         for i, key in enumerate(centrality_keys):
-            var = tk.BooleanVar(value=(key in ("degree", "betweenness", "closeness")))
-            cb = ttk.Checkbutton(centralities_frame, text=key, variable=var)
-            cb.grid(row=0, column=i, padx=4, pady=2, sticky=tk.W)
+            var = tk.BooleanVar(value=(key in ("degree", "unnormalized_degree", "betweenness", "closeness")))
+            display_name = centrality_display_names.get(key, key.title())
+            cb = ttk.Checkbutton(centralities_frame, text=display_name, variable=var)
+            # Use multiple rows if we have many centrality options
+            row = i // 3
+            col = i % 3
+            cb.grid(row=row, column=col, padx=4, pady=2, sticky=tk.W)
             self.centrality_vars[key] = var
 
         # Plot options

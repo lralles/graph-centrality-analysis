@@ -13,12 +13,20 @@ The workflow is:
 
 ### Run
 
-```python3 -m src.application.main``` 
+```
+python3 -m src.application.main
+``` 
 
 ### Compile 
 
-``` pyinstaller --onefile src/application/main.py --hidden-import=matplotlib.backends.backend_svg --hidden-import=PIL._tkinter_finder --paths=. ```
+``` 
+pyinstaller --onefile src/application/main.py --hidden-import=matplotlib.backends.backend_svg --hidden-import=PIL._tkinter_finder --paths=. 
+```
 
 #### Run Compiled Version
 
-```./dist/main``` 
+Before running, ensure the executable has the necessary permisions, refer to the chmod command on linux.
+
+```
+./dist/main
+``` 

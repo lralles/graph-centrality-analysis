@@ -38,9 +38,29 @@ def print_impact(impact):
 
     print('\n')
 
+def unnormalized_degree_centrality(G):
+    """
+    Compute the unnormalized degree centrality for nodes.
+
+    The unnormalized degree centrality is simply the degree of each node,
+    without normalization by (n-1) as done in nx.degree_centrality.
+
+    Parameters
+    ----------
+    G : NetworkX graph
+        A NetworkX graph
+
+    Returns
+    -------
+    dict
+        Dictionary of nodes with unnormalized degree centrality as values.
+    """
+    return dict(G.degree())
+
 
 centrality_functions = {
     "degree": nx.degree_centrality,
+    "unnormalized_degree": unnormalized_degree_centrality,
     "betweenness": nx.betweenness_centrality,
     "closeness": nx.closeness_centrality,
     "eigenvector": lambda G: nx.eigenvector_centrality(G, max_iter=5000),
