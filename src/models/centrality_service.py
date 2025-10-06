@@ -51,24 +51,47 @@ centrality_functions = {
 class CentralityAnalysisService:
     def compute(self, G: nx.Graph, removed_nodes, selected_centralities) -> tuple[pd.DataFrame, dict[Any, float]]:
         overall_centrality_delta = {}
-        overall_centrality_score = {}
+        centrality_results = {}  # Store individual centrality results
 
         for centrality in selected_centralities:
             _, node_removal_impact, new_centrality = get_node_removal_impact(
                 G, removed_nodes, centrality_functions[centrality]
             )
 
+            # Store individual centrality results
+            centrality_results[centrality] = {
+                'new': new_centrality,
+                'diff': node_removal_impact
+            }
+
             for k, v in node_removal_impact.items():
                 overall_centrality_delta[k] = overall_centrality_delta.get(k, 0) + v
 
-            for k, v in new_centrality.items():
-                overall_centrality_score[k] = overall_centrality_score.get(k, 0) + v
-
+        # Build the table with individual centrality columns
         centrality_table = {}
-        for node in overall_centrality_score:
-            new_val = overall_centrality_score[node]
-            diff = overall_centrality_delta.get(node, np.nan)
-            centrality_table[node] = {"new": new_val, "diff": diff}
+        all_nodes = set()
+
+        # Collect all nodes from all centrality measures
+        for centrality_data in centrality_results.values():
+            all_nodes.update(centrality_data['new'].keys())
+
+        for node in all_nodes:
+            row_data = {}
+
+            # Add individual centrality columns
+            for centrality in selected_centralities:
+                new_val = centrality_results[centrality]['new'].get(node, np.nan)
+                diff_val = centrality_results[centrality]['diff'].get(node, np.nan)
+                row_data[f"New {centrality.title()}"] = new_val
+                row_data[f"Diff {centrality.title()}"] = diff_val
+
+            # Add combined columns
+            combined_new = sum(centrality_results[cent]['new'].get(node, 0) for cent in selected_centralities)
+            combined_diff = sum(centrality_results[cent]['diff'].get(node, 0) for cent in selected_centralities)
+            row_data["Combined New"] = combined_new
+            row_data["Combined Diff"] = combined_diff
+
+            centrality_table[node] = row_data
 
         df = pd.DataFrame.from_dict(centrality_table, orient="index")
         return df, overall_centrality_delta
