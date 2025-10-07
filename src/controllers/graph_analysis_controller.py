@@ -52,6 +52,10 @@ class GraphAnalysisController:
 
             self.app.status.set_status(f"Preview loaded: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
 
+            # Populate the node selector with available nodes
+            nodes = sorted(G.nodes())
+            self.app.toolbar.update_node_list(nodes)
+
         except Exception as e:
             self.app.status.set_status(f"Preview failed: {str(e)}")
             import traceback
@@ -62,14 +66,14 @@ class GraphAnalysisController:
         edge1 = self.app.toolbar.edge1_var.get().strip() or "edge1"
         edge2 = self.app.toolbar.edge2_var.get().strip() or "edge2"
         weight = self.app.toolbar.weight_var.get().strip() or "weight"
-        removed_nodes = [n for n in self.app.toolbar.removed_nodes_var.get().split() if n]
+        removed_nodes = self.app.toolbar.get_selected_nodes()
         selected_cents = [k for k, v in self.app.toolbar.centrality_vars.items() if v.get()]
         remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
 
         if not file_path:
             raise ValueError("Please select a graph file")
         if not removed_nodes:
-            raise ValueError("Please enter at least one removed node")
+            raise ValueError("Please select at least one node to remove")
         if not selected_cents:
             raise ValueError("Please select at least one centrality measure")
 

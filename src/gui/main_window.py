@@ -219,6 +219,7 @@ class GraphAnalysisGUI(tk.Tk):
     def _on_clear(self):
         self.table.clear()
         self.plot.clear()
+        self.toolbar.clear_node_selector()
         self.last_analysis_result = None
         self.status.set_status("Cleared")
 

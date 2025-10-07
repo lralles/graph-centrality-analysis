@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from .node_selector_view import NodeSelectorView
 
 class ToolbarView(ttk.Frame):
     def __init__(self, master: tk.Misc, centrality_keys):
@@ -40,9 +41,10 @@ class ToolbarView(ttk.Frame):
         self.remove_self_edges_cb = ttk.Checkbutton(self, text="Remove self-edges (loops)", variable=self.remove_self_edges_var, command=self._on_column_selected)
         self.remove_self_edges_cb.grid(row=2, column=2, columnspan=2, sticky=tk.W, padx=4, pady=4)
 
-        ttk.Label(self, text="Removed nodes (space-separated)").grid(row=3, column=0, sticky=tk.W, padx=4, pady=4)
-        self.removed_nodes_var = tk.StringVar()
-        ttk.Entry(self, textvariable=self.removed_nodes_var, width=60, style="Tall.TEntry").grid(row=3, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
+        # Node selector with multi-select
+        ttk.Label(self, text="Nodes to remove").grid(row=3, column=0, sticky=tk.NW, padx=4, pady=4)
+        self.node_selector = NodeSelectorView(self)
+        self.node_selector.grid(row=3, column=1, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=4, pady=4)
 
         ttk.Label(self, text="Centrality measures").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
         self.centrality_vars = {}
@@ -127,5 +129,17 @@ class ToolbarView(ttk.Frame):
     def set_column_selected_callback(self, callback):
         """Set the callback function for when columns are selected"""
         self.on_column_selected_callback = callback
+
+    def update_node_list(self, nodes):
+        """Update the available nodes in the node selector"""
+        self.node_selector.set_nodes(nodes)
+
+    def get_selected_nodes(self):
+        """Get the currently selected nodes from the node selector"""
+        return self.node_selector.get_selected_nodes()
+
+    def clear_node_selector(self):
+        """Clear the node selector"""
+        self.node_selector.clear()
 
 
