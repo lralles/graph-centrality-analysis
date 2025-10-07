@@ -16,10 +16,21 @@ class GraphAnalysisController:
         weight = self.app.toolbar.weight_var.get().strip()
         remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
 
-        if not file_path or not edge1 or not edge2 or not weight:
-            return
+        # Check if file is .cys or TSV
+        import os
+        file_ext = os.path.splitext(file_path)[1].lower() if file_path else ""
+
+        # For .cys files, we don't need column specifications
+        if file_ext == '.cys':
+            if not file_path:
+                return
+        else:
+            # For TSV files, we need all column specifications
+            if not file_path or not edge1 or not edge2 or not weight:
+                return
 
         try:
+            self.app.status.set_status("Loading preview...")
             G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges)
 
             preview_result = {
@@ -43,6 +54,8 @@ class GraphAnalysisController:
 
         except Exception as e:
             self.app.status.set_status(f"Preview failed: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
     def run_analysis(self) -> None:
         file_path = self.app.toolbar.file_var.get().strip()
@@ -54,7 +67,7 @@ class GraphAnalysisController:
         remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
 
         if not file_path:
-            raise ValueError("Please select a TSV file")
+            raise ValueError("Please select a graph file")
         if not removed_nodes:
             raise ValueError("Please enter at least one removed node")
         if not selected_cents:
@@ -65,9 +78,14 @@ class GraphAnalysisController:
 
         self.app.after(0, lambda: self.app.table.populate(df))
 
+        # Determine file type for label
+        import os
+        file_ext = os.path.splitext(file_path)[1].lower()
+        file_type = "CYS" if file_ext == '.cys' else "TSV"
+
         result = {
-            "label": "Read from TSV",
-            "gtype": "Read from TSV",
+            "label": f"Read from {file_type}",
+            "gtype": f"Read from {file_type}",
             "impact": impact,
             "graph": G,
             "removed_nodes": removed_nodes,

@@ -117,18 +117,14 @@ class GraphAnalysisGUI(tk.Tk):
         )
         if path:
             self.toolbar.file_var.set(path)
-            # Read file to get column names for autocomplete (TSV) or disable column selection (CYS)
+            # Read file to get column names for autocomplete (TSV) or handle .cys files
             _, ext = os.path.splitext(path)
             ext = ext.lower()
             if ext == ".tsv":
                 self._load_column_names(path)
             elif ext == ".cys":
-                # Cytoscape session file - column selection not applicable
-                try:
-                    self.toolbar.update_column_suggestions([])
-                except Exception:
-                    pass
-                self.status.set_status("CYS file selected; column selection disabled")
+                # Cytoscape session file - handle in _load_column_names
+                self._load_column_names(path)
             else:
                 # For other file types, attempt to load columns (best-effort)
                 try:
@@ -148,41 +144,28 @@ class GraphAnalysisGUI(tk.Tk):
 
             if file_ext == '.cys':
                 # For .cys files, disable column selection and show info
-                try:
-                    self.toolbar.update_column_suggestions([])
-                except Exception:
-                    pass
+                self.toolbar.update_column_suggestions([])
+                self.toolbar.disable_column_selection()
 
-                # Attempt to disable column selection UI if available
-                try:
-                    self.toolbar.disable_column_selection()
-                except Exception:
-                    pass
-
-                # Get available networks in the .cys file (best-effort)
-                try:
-                    loader = GraphLoader()
-                    networks = loader.get_available_networks(path)
-                except Exception:
-                    networks = None
+                # Get available networks in the .cys file
+                loader = GraphLoader()
+                networks = loader.get_available_networks(path)
 
                 if networks:
                     self.status.set_status(f"Loaded .cys file with {len(networks)} network(s)")
                 else:
                     self.status.set_status("Loaded .cys file")
+
+                # Automatically generate preview for .cys files
+                # Use after() to ensure it runs on the main thread after UI updates
+                if hasattr(self, '_controller'):
+                    self.after(100, self._controller.generate_preview)
             else:
-                # For TSV and other tabular files, read column names
+                # For TSV files, read column names
                 df = pd.read_csv(path, sep='\t', nrows=0)
                 columns = df.columns.tolist()
-                try:
-                    self.toolbar.update_column_suggestions(columns)
-                except Exception:
-                    pass
-                # Attempt to enable column selection UI if available
-                try:
-                    self.toolbar.enable_column_selection()
-                except Exception:
-                    pass
+                self.toolbar.update_column_suggestions(columns)
+                self.toolbar.enable_column_selection()
                 self.status.set_status(f"Loaded {len(columns)} columns from file")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to read file:\n{str(e)}")
