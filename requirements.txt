@@ -1,5 +1,6 @@
 ipykernel
 networkx
+networkxgmml
 numpy
 scipy
 pandas

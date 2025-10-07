@@ -106,22 +106,86 @@ class GraphAnalysisGUI(tk.Tk):
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
 
     def _browse_file(self):
-        path = filedialog.askopenfilename(title="Select graph TSV", filetypes=[("TSV files", "*.tsv"), ("All files", "*.*")])
+        path = filedialog.askopenfilename(
+            title="Select graph file",
+            filetypes=[
+                ("Graph files", "*.tsv *.cys"),
+                ("TSV files", "*.tsv"),
+                ("Cytoscape files", "*.cys"),
+                ("All files", "*.*")
+            ]
+        )
         if path:
             self.toolbar.file_var.set(path)
-            # Read TSV to get column names for autocomplete
-            self._load_column_names(path)
+            # Read file to get column names for autocomplete (TSV) or disable column selection (CYS)
+            _, ext = os.path.splitext(path)
+            ext = ext.lower()
+            if ext == ".tsv":
+                self._load_column_names(path)
+            elif ext == ".cys":
+                # Cytoscape session file - column selection not applicable
+                try:
+                    self.toolbar.update_column_suggestions([])
+                except Exception:
+                    pass
+                self.status.set_status("CYS file selected; column selection disabled")
+            else:
+                # For other file types, attempt to load columns (best-effort)
+                try:
+                    self._load_column_names(path)
+                except Exception:
+                    # If loading fails, clear suggestions
+                    try:
+                        self.toolbar.update_column_suggestions([])
+                    except Exception:
+                        pass
+                    self.status.set_status("Selected file type not recognized for column extraction")
 
     def _load_column_names(self, path):
-        """Load column names from TSV file and update autocomplete suggestions"""
+        """Load column names from TSV file and update autocomplete suggestions, or handle .cys files"""
         try:
-            # Read only the first row to get column names
-            df = pd.read_csv(path, sep='\t', nrows=0)
-            columns = df.columns.tolist()
-            self.toolbar.update_column_suggestions(columns)
-            self.status.set_status(f"Loaded {len(columns)} columns from file")
+            file_ext = os.path.splitext(path)[1].lower()
+
+            if file_ext == '.cys':
+                # For .cys files, disable column selection and show info
+                try:
+                    self.toolbar.update_column_suggestions([])
+                except Exception:
+                    pass
+
+                # Attempt to disable column selection UI if available
+                try:
+                    self.toolbar.disable_column_selection()
+                except Exception:
+                    pass
+
+                # Get available networks in the .cys file (best-effort)
+                try:
+                    loader = GraphLoader()
+                    networks = loader.get_available_networks(path)
+                except Exception:
+                    networks = None
+
+                if networks:
+                    self.status.set_status(f"Loaded .cys file with {len(networks)} network(s)")
+                else:
+                    self.status.set_status("Loaded .cys file")
+            else:
+                # For TSV and other tabular files, read column names
+                df = pd.read_csv(path, sep='\t', nrows=0)
+                columns = df.columns.tolist()
+                try:
+                    self.toolbar.update_column_suggestions(columns)
+                except Exception:
+                    pass
+                # Attempt to enable column selection UI if available
+                try:
+                    self.toolbar.enable_column_selection()
+                except Exception:
+                    pass
+                self.status.set_status(f"Loaded {len(columns)} columns from file")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to read column names from file:\n{str(e)}")
+            messagebox.showerror("Error", f"Failed to read file:\n{str(e)}")
 
     def _on_column_selected(self):
         """Called when a column is selected - trigger preview generation"""

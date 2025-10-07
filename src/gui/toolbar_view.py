@@ -11,7 +11,7 @@ class ToolbarView(ttk.Frame):
         # Callback for when columns are selected
         self.on_column_selected_callback = None
 
-        ttk.Label(self, text="Graph TSV file").grid(row=0, column=0, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(self, text="Graph file (TSV or CYS)").grid(row=0, column=0, sticky=tk.W, padx=4, pady=4)
         self.file_var = tk.StringVar()
         ttk.Entry(self, textvariable=self.file_var, width=60, style="Tall.TEntry").grid(row=0, column=1, sticky=tk.W, padx=4, pady=4)
         self.browse_button = ttk.Button(self, text="Browse", style="Tall.TButton")
@@ -102,6 +102,22 @@ class ToolbarView(ttk.Frame):
         self.edge1_combo['values'] = columns
         self.edge2_combo['values'] = columns
         self.weight_combo['values'] = columns
+
+    def disable_column_selection(self):
+        """Disable column selection widgets (for .cys files)"""
+        self.edge1_combo.configure(state='disabled')
+        self.edge2_combo.configure(state='disabled')
+        self.weight_combo.configure(state='disabled')
+        # Clear the values
+        self.edge1_var.set('')
+        self.edge2_var.set('')
+        self.weight_var.set('')
+
+    def enable_column_selection(self):
+        """Enable column selection widgets (for TSV files)"""
+        self.edge1_combo.configure(state='readonly')
+        self.edge2_combo.configure(state='readonly')
+        self.weight_combo.configure(state='readonly')
 
     def _on_column_selected(self, _event=None):
         """Called when a column is selected in any combobox"""
