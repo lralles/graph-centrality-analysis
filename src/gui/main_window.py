@@ -18,17 +18,25 @@ from src.models.centrality_service import centrality_functions
 
 class GraphAnalysisGUI(tk.Tk):
     def __init__(self):
+        """
+        Initializes the GUI
+        Binds the controller, which handles UI events
+        """
+        # start Tkinter
         super().__init__()
         self.title("Graph Node Removal Analysis")
-        self.geometry("1100x700")
+        self.geometry("1400x960")
 
+        # build gui
         self._init_style()
         self._build_widgets()
 
+        # initialize program "backend"
         self.pos_cache = {}
         self.last_save_dir = "."
         self.last_analysis_result = None  # Store the last analysis result
 
+        # bind controller - maps gui events to handlers
         self._controller = GraphAnalysisController(
             app=self,
             loader=GraphLoader(),
@@ -38,29 +46,36 @@ class GraphAnalysisGUI(tk.Tk):
         )
 
     def _init_style(self):
+        """
+        Initializes the global styles of the widgets, sets colors and common configs
+        """
+        # create style object
         style = ttk.Style(self)
-        try:
-            style.theme_use("clam")
-        except Exception:
-            pass
-        bg = "#1e1e1e"
-        panel_bg = "#252526"
-        fg = "#dddddd"
-        subtle = "#2d2d30"
+        style.theme_use("clam")
 
+        # define a few colors
+        bg = "#cccccc"          # background - light grey
+        panel_bg = "#dddddd"    # lighter grey
+        fg = "#000000"          # black for fonts
+        subtle = "#dddddd"      # lighter grey for borders
+
+        # general configurations
         self.configure(background=bg)
 
+        # frame and container style config
         style.configure("TFrame", background=bg)
         style.configure("TPanedwindow", background=bg)
+
+        # data user inputs style config
         style.configure("TLabel", background=bg, foreground=fg)
         style.configure("TButton", background=panel_bg, foreground=fg, padding=(10, 6))
         style.map("TButton", background=[("active", "#3a3d41")])
-
+        # for tall variants
         style.configure("Tall.TEntry", fieldbackground=panel_bg, foreground=fg, padding=(10, 6))
         style.configure("Tall.TButton", background=panel_bg, foreground=fg, padding=(10, 6))
         style.configure("TEntry", fieldbackground=panel_bg, foreground=fg)
 
-        # Combobox styles
+        # combobox elements style config
         style.configure("Tall.TCombobox", fieldbackground=panel_bg, foreground=fg, padding=(10, 6))
         style.configure("TCombobox", fieldbackground=panel_bg, foreground=fg, background=panel_bg)
         style.map("TCombobox",
@@ -68,6 +83,7 @@ class GraphAnalysisGUI(tk.Tk):
                   selectbackground=[("readonly", panel_bg)],
                   selectforeground=[("readonly", fg)])
 
+        # treeview style config - useful for results table
         style.configure(
             "Treeview",
             background=panel_bg,
@@ -81,9 +97,15 @@ class GraphAnalysisGUI(tk.Tk):
         )
         style.configure("Treeview.Heading", background=subtle, foreground=fg, font=("Segoe UI", 10, "bold"))
         style.map("Treeview", background=[("selected", "#094771")], foreground=[("selected", "#ffffff")])
+        
+        # divider style config
         style.configure("Sash", background=subtle)
 
     def _build_widgets(self):
+        """
+        Initializes the visual elements of the GUI and binds UI envents to handlers
+        """
+        # toolbar initialization, binds events
         self.toolbar = ToolbarView(self, list(centrality_functions.keys()))
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.toolbar.browse_button.configure(command=self._browse_file)
@@ -93,19 +115,27 @@ class GraphAnalysisGUI(tk.Tk):
         self.toolbar.clear_button.configure(command=self._on_clear)
         self.toolbar.set_column_selected_callback(self._on_column_selected)
 
+        # paned is the lower pannel
         paned = ttk.Panedwindow(self, orient=tk.HORIZONTAL)
         paned.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
+        # creates the results table - where results show up
         self.table = TableView(paned)
         paned.add(self.table, weight=1)
 
+        # creates the plot visualization
         self.plot = PlotView(paned)
         paned.add(self.plot, weight=1)
 
+        # creates the status bar
         self.status = StatusBarView(self)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
 
     def _browse_file(self):
+        """
+        Opens a file dialog and allows user to get file
+        """
+        # open dialog
         path = filedialog.askopenfilename(
             title="Select graph file",
             filetypes=[
@@ -115,39 +145,33 @@ class GraphAnalysisGUI(tk.Tk):
                 ("All files", "*.*")
             ]
         )
+        
         if path:
+            # displays file name is toolbar
             self.toolbar.file_var.set(path)
-            # Read file to get column names for autocomplete (TSV) or handle .cys files
+            
+            # gets file extensior
             _, ext = os.path.splitext(path)
             ext = ext.lower()
-            if ext == ".tsv":
-                self._load_column_names(path)
-            elif ext == ".cys":
-                # Cytoscape session file - handle in _load_column_names
-                self._load_column_names(path)
-            else:
-                # For other file types, attempt to load columns (best-effort)
-                try:
-                    self._load_column_names(path)
-                except Exception:
-                    # If loading fails, clear suggestions
-                    try:
-                        self.toolbar.update_column_suggestions([])
-                    except Exception:
-                        pass
-                    self.status.set_status("Selected file type not recognized for column extraction")
 
-    def _load_column_names(self, path):
-        """Load column names from TSV file and update autocomplete suggestions, or handle .cys files"""
+            if ext == ".tsv" or ext == ".cys":
+                self._handle_file_upload(path)
+            else:
+                self.status.set_status("Selected file type not recognized for column extraction")
+
+    def _handle_file_upload(self, path):
+        """
+        Handles input of TSV or CYS files
+        for TSV: gets columns names and allows user to configure graph on UI
+        for CYS: reads graph from file and loads preview, disables column selections
+        """
         try:
             file_ext = os.path.splitext(path)[1].lower()
 
             if file_ext == '.cys':
-                # For .cys files, disable column selection and show info
                 self.toolbar.update_column_suggestions([])
                 self.toolbar.disable_column_selection()
 
-                # Get available networks in the .cys file
                 loader = GraphLoader()
                 networks = loader.get_available_networks(path)
 
@@ -156,17 +180,16 @@ class GraphAnalysisGUI(tk.Tk):
                 else:
                     self.status.set_status("Loaded .cys file")
 
-                # Automatically generate preview for .cys files
-                # Use after() to ensure it runs on the main thread after UI updates
+                # avoid unbind bugs
                 if hasattr(self, '_controller'):
                     self.after(100, self._controller.generate_preview)
             else:
-                # For TSV files, read column names
                 df = pd.read_csv(path, sep='\t', nrows=0)
                 columns = df.columns.tolist()
                 self.toolbar.update_column_suggestions(columns)
                 self.toolbar.enable_column_selection()
                 self.status.set_status(f"Loaded {len(columns)} columns from file")
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to read file:\n{str(e)}")
 

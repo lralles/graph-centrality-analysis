@@ -40,9 +40,10 @@ class TableView(ttk.Frame):
         tree_frame.grid_rowconfigure(0, weight=1)
         tree_frame.grid_columnconfigure(0, weight=1)
         
-        # Configure alternating row colors
+        # Configure alternating row colors (zebra striping)
         try:
-            self.tree.tag_configure('oddrow', background='#2a2d2e')
+            self.tree.tag_configure('evenrow', background='#f0f0f0')  # Light grey
+            self.tree.tag_configure('oddrow', background='#e0e0e0')   # Medium grey
         except Exception:
             pass
         
@@ -66,12 +67,12 @@ class TableView(ttk.Frame):
         except (ValueError, TypeError):
             # Fall back to string sort
             items.sort(key=lambda x: str(x[0]).lower(), reverse=reverse)
-        
+
         # Rearrange items in sorted positions
         for index, (val, child) in enumerate(items):
             self.tree.move(child, '', index)
             # Update row colors
-            tag = 'oddrow' if index % 2 else ''
+            tag = 'oddrow' if index % 2 else 'evenrow'
             self.tree.item(child, tags=(tag,))
         
         # Update sort direction for next click
@@ -146,5 +147,5 @@ class TableView(ttk.Frame):
                 else:
                     values.append(str(val))
             
-            tag = 'oddrow' if idx % 2 else ''
+            tag = 'oddrow' if idx % 2 else 'evenrow'
             self.tree.insert("", tk.END, text=str(node), values=values, tags=(tag,))

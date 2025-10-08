@@ -1,5 +1,6 @@
-from typing import Any
+from os import path
 
+from typing import Any
 
 class GraphAnalysisController:
     def __init__(self, app: Any, loader, analysis, layout_cache, renderer):
@@ -10,22 +11,21 @@ class GraphAnalysisController:
         self.renderer = renderer
 
     def generate_preview(self) -> None:
+        """
+        Generates the graph preview if the graph can be loaded
+        """
         file_path = self.app.toolbar.file_var.get().strip()
+        if not file_path:
+            return
+        
         edge1 = self.app.toolbar.edge1_var.get().strip()
         edge2 = self.app.toolbar.edge2_var.get().strip()
         weight = self.app.toolbar.weight_var.get().strip()
         remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
 
-        # Check if file is .cys or TSV
-        import os
-        file_ext = os.path.splitext(file_path)[1].lower() if file_path else ""
-
-        # For .cys files, we don't need column specifications
-        if file_ext == '.cys':
-            if not file_path:
-                return
-        else:
-            # For TSV files, we need all column specifications
+        # Check if file is TSV, if is and graph info is not available, skip
+        file_ext = path.splitext(file_path)[1].lower() if file_path else ""
+        if file_ext == ".tsv":
             if not file_path or not edge1 or not edge2 or not weight:
                 return
 
@@ -33,12 +33,13 @@ class GraphAnalysisController:
             self.app.status.set_status("Loading preview...")
             G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges)
 
+            # uses the same visualization engine as the impact, but with different options
             preview_result = {
                 "label": "Graph Preview",
                 "gtype": "Preview",
-                "impact": {},  # Empty impact for preview
+                "impact": {},           # Empty impact for preview
                 "graph": G,
-                "removed_nodes": [],  # No removed nodes in preview
+                "removed_nodes": [],    # No removed nodes in preview
             }
 
             preview_options = {
@@ -58,8 +59,6 @@ class GraphAnalysisController:
 
         except Exception as e:
             self.app.status.set_status(f"Preview failed: {str(e)}")
-            import traceback
-            traceback.print_exc()
 
     def run_analysis(self) -> None:
         file_path = self.app.toolbar.file_var.get().strip()
@@ -82,9 +81,7 @@ class GraphAnalysisController:
 
         self.app.after(0, lambda: self.app.table.populate(df))
 
-        # Determine file type for label
-        import os
-        file_ext = os.path.splitext(file_path)[1].lower()
+        file_ext = path.splitext(file_path)[1].lower()
         file_type = "CYS" if file_ext == '.cys' else "TSV"
 
         result = {

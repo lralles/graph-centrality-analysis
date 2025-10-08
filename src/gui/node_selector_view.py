@@ -34,16 +34,6 @@ class NodeSelectorView(ttk.Frame):
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Button frame
-        button_frame = ttk.Frame(self)
-        button_frame.pack(fill=tk.X, pady=(4, 0))
-
-        self.select_all_button = ttk.Button(button_frame, text="Select All", command=self._select_all)
-        self.select_all_button.pack(side=tk.LEFT, padx=(0, 4))
-
-        self.clear_button = ttk.Button(button_frame, text="Clear Selection", command=self._clear_selection)
-        self.clear_button.pack(side=tk.LEFT)
-
         # Store all nodes for filtering
         self._all_nodes = []
 
@@ -63,12 +53,6 @@ class NodeSelectorView(ttk.Frame):
         for i in range(self.listbox.size()):
             if self.listbox.get(i) in nodes:
                 self.listbox.selection_set(i)
-
-    def clear(self):
-        """Clear all nodes from the listbox"""
-        self._all_nodes = []
-        self.listbox.delete(0, tk.END)
-        self.search_var.set("")
 
     def _update_listbox(self):
         """Update the listbox based on current filter"""
@@ -90,11 +74,3 @@ class NodeSelectorView(ttk.Frame):
     def _on_search(self, *_args):
         """Called when search text changes"""
         self._update_listbox()
-
-    def _select_all(self):
-        """Select all visible nodes"""
-        self.listbox.selection_set(0, tk.END)
-
-    def _clear_selection(self):
-        """Clear all selections"""
-        self.listbox.selection_clear(0, tk.END)

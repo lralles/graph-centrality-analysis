@@ -18,19 +18,19 @@ class ToolbarView(ttk.Frame):
         self.browse_button = ttk.Button(self, text="Browse", style="Tall.TButton")
         self.browse_button.grid(row=0, column=2, padx=4, pady=4, sticky=tk.W)
 
-        ttk.Label(self, text="Edge 1 column").grid(row=1, column=0, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(self, text="Source Node Column").grid(row=1, column=0, sticky=tk.W, padx=4, pady=4)
         self.edge1_var = tk.StringVar()
         self.edge1_combo = ttk.Combobox(self, textvariable=self.edge1_var, width=18, style="Tall.TCombobox", state="readonly")
         self.edge1_combo.grid(row=1, column=1, sticky=tk.W, padx=4, pady=4)
         self.edge1_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
-        ttk.Label(self, text="Edge 2 column").grid(row=1, column=2, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(self, text="Destination Node Column").grid(row=1, column=2, sticky=tk.W, padx=4, pady=4)
         self.edge2_var = tk.StringVar()
         self.edge2_combo = ttk.Combobox(self, textvariable=self.edge2_var, width=18, style="Tall.TCombobox", state="readonly")
         self.edge2_combo.grid(row=1, column=3, sticky=tk.W, padx=4, pady=4)
         self.edge2_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
-        ttk.Label(self, text="Weight column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(self, text="Weight Column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
         self.weight_var = tk.StringVar()
         self.weight_combo = ttk.Combobox(self, textvariable=self.weight_var, width=18, style="Tall.TCombobox", state="readonly")
         self.weight_combo.grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
@@ -62,7 +62,7 @@ class ToolbarView(ttk.Frame):
         }
 
         for i, key in enumerate(centrality_keys):
-            var = tk.BooleanVar(value=(key in ("degree", "unnormalized_degree", "betweenness", "closeness")))
+            var = tk.BooleanVar(value=(key in ("degree", "betweenness", "closeness")))
             display_name = centrality_display_names.get(key, key.title())
             cb = ttk.Checkbutton(centralities_frame, text=display_name, variable=var)
             # Use multiple rows if we have many centrality options
