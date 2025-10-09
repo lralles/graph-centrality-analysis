@@ -251,6 +251,7 @@ class GraphAnalysisGUI(tk.Tk):
             self.status.set_status("Running analysis...")
             self._run_analysis()
             self.status.set_status("Done")
+            self._on_refresh_plot()
         except Exception as e:
             self.status.set_status("Error")
             messagebox.showerror("Error", str(e))

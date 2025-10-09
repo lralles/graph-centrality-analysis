@@ -61,25 +61,30 @@ class GraphAnalysisController:
             self.app.status.set_status(f"Preview failed: {str(e)}")
 
     def run_analysis(self) -> None:
+        """
+        Runs the centrality analysis
+        Populates the table
+        Plots the result in the graph view
+        """
         file_path = self.app.toolbar.file_var.get().strip()
         edge1 = self.app.toolbar.edge1_var.get().strip() or "edge1"
         edge2 = self.app.toolbar.edge2_var.get().strip() or "edge2"
         weight = self.app.toolbar.weight_var.get().strip() or "weight"
         removed_nodes = self.app.toolbar.get_selected_nodes()
-        selected_cents = [k for k, v in self.app.toolbar.centrality_vars.items() if v.get()]
+        selected_centralities = [k for k, v in self.app.toolbar.centrality_vars.items() if v.get()]
         remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
 
         if not file_path:
             raise ValueError("Please select a graph file")
         if not removed_nodes:
             raise ValueError("Please select at least one node to remove")
-        if not selected_cents:
+        if not selected_centralities:
             raise ValueError("Please select at least one centrality measure")
 
         G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges)
-        df, impact = self.analysis.compute(G, removed_nodes, selected_cents)
+        df, impact = self.analysis.compute(G, removed_nodes, selected_centralities)
 
-        self.app.after(0, lambda: self.app.table.populate(df))
+        self.app.table.populate(df)
 
         file_ext = path.splitext(file_path)[1].lower()
         file_type = "CYS" if file_ext == '.cys' else "TSV"
