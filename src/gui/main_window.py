@@ -180,7 +180,7 @@ class GraphAnalysisGUI(tk.Tk):
                 else:
                     self.status.set_status("Loaded .cys file")
 
-                # avoid unbind bugs
+                # avoid unbind bugs (method called while constructor is executing)
                 if hasattr(self, '_controller'):
                     self.after(100, self._controller.generate_preview)
             else:

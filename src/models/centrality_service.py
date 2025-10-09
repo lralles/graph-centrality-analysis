@@ -5,6 +5,26 @@ import pandas as pd
 import networkx as nx
 
 def get_node_removal_impact(graph, nodes_to_remove, centrality_metric_function):
+    """
+     Calculate the impact of removing specific nodes on the centrality of remaining nodes.
+    
+    This function computes how the centrality values of nodes in a graph change when
+    a specified set of nodes is removed. It measures the difference between the original
+    centrality and the new centrality after node removal.
+    
+    Parameters
+    ----------
+    graph : networkx.Graph
+    nodes_to_remove : list or set
+    centrality_metric_function : callable
+    Returns
+    -------
+    tuple[float, dict, dict]
+        A tuple containing:
+        - elapsed_time (float)
+        - impact_sorted (dict)
+        - new_centrality (dict)
+    """
     start_time = time.time()
 
     original_centrality = centrality_metric_function(graph)
@@ -41,10 +61,6 @@ def print_impact(impact):
 def unnormalized_degree_centrality(G):
     """
     Compute the unnormalized degree centrality for nodes.
-
-    The unnormalized degree centrality is simply the degree of each node,
-    without normalization by (n-1) as done in nx.degree_centrality.
-
     Parameters
     ----------
     G : NetworkX graph
