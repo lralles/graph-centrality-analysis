@@ -3,3 +3,6 @@ assets
 __pycache__
 numpy
 pandas
+build
+dist
+Read from TSV.svg
