@@ -27,7 +27,7 @@ def make_graph(
     
     elif graph_type == "watts_strogatz":
         k = max(2, size // 50)
-        G = nx.watts_strogatz_graph(size, k, 0.3, seed=seed)
+        G = nx.watts_strogatz_graph(size, k, 0.3)
         if directed:
             # simetric directed
             G = G.to_directed()
