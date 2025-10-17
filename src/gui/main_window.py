@@ -268,6 +268,8 @@ class GraphAnalysisGUI(tk.Tk):
         # Hide both views when clearing
         self.table.pack_forget()
         self.adjacency_list.pack_forget()
+        # Expand the configuration section when clearing to allow new configuration
+        self.toolbar.expand()
         self.status.set_status("Cleared")
 
     def _run_analysis_safe(self):
@@ -276,6 +278,8 @@ class GraphAnalysisGUI(tk.Tk):
             self._run_analysis()
             self.status.set_status("Done")
             self._on_refresh_plot()
+            # Auto-collapse the configuration section after successful analysis
+            self.toolbar.collapse()
         except Exception as e:
             self.status.set_status("Error")
             messagebox.showerror("Error", str(e))
