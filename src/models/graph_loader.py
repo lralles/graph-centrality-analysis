@@ -62,13 +62,22 @@ class GraphLoader:
                 # Convert to undirected graph (as the original code uses nx.Graph())
                 G = nx.Graph()
 
-                # Copy nodes with their attributes
-                for node, attrs in G_directed.nodes(data=True):
-                    G.add_node(node, **attrs)
+                # Create a mapping from original node IDs to labels (node names)
+                id_to_label = {}
 
-                # Copy edges with their attributes
-                for source, target, attrs in G_directed.edges(data=True):
-                    if remove_self_edges and source == target:
+                # Copy nodes with their attributes, using labels as node identifiers
+                for node_id, attrs in G_directed.nodes(data=True):
+                    # Use the label as the node name if available, otherwise use the ID
+                    node_name = attrs.get('label', node_id)
+                    id_to_label[node_id] = node_name
+                    G.add_node(node_name, **attrs)
+
+                # Copy edges with their attributes, mapping IDs to labels
+                for source_id, target_id, attrs in G_directed.edges(data=True):
+                    source_name = id_to_label[source_id]
+                    target_name = id_to_label[target_id]
+
+                    if remove_self_edges and source_name == target_name:
                         continue
 
                     # Extract weight from the 'interaction' attribute if available
@@ -82,7 +91,7 @@ class GraphLoader:
                         weight = 1.0
 
                     # Add edge with weight
-                    G.add_edge(source, target, weight=weight, **attrs)
+                    G.add_edge(source_name, target_name, weight=weight, **attrs)
 
                 return G
 
