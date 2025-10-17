@@ -74,3 +74,7 @@ class NodeSelectorView(ttk.Frame):
     def _on_search(self, *_args):
         """Called when search text changes"""
         self._update_listbox()
+
+    def clear(self):
+        self._all_nodes = []
+        self._update_listbox()

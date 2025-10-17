@@ -57,6 +57,10 @@ class GraphAnalysisController:
             nodes = sorted(G.nodes())
             self.app.toolbar.update_node_list(nodes)
 
+            # Populate the adjacency list and show it
+            self.app.adjacency_list.populate(G)
+            self.app._show_adjacency_list()
+
         except Exception as e:
             self.app.status.set_status(f"Preview failed: {str(e)}")
 
@@ -84,6 +88,8 @@ class GraphAnalysisController:
         G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges)
         df, impact = self.analysis.compute(G, removed_nodes, selected_centralities)
 
+        # Switch to analysis table view and populate it
+        self.app._show_analysis_table()
         self.app.table.populate(df)
 
         file_ext = path.splitext(file_path)[1].lower()
@@ -108,5 +114,4 @@ class GraphAnalysisController:
         }
 
         self.renderer.render(self.app.plot.figure, result, plot_options)
-
 

@@ -103,7 +103,7 @@ class GraphAnalysisGUI(tk.Tk):
 
     def _build_widgets(self):
         """
-        Initializes the visual elements of the GUI and binds UI envents to handlers
+        Initializes the visual elements of the GUI and binds UI events to handlers
         """
         # toolbar initialization, binds events
         self.toolbar = ToolbarView(self, list(centrality_functions.keys()))
@@ -115,13 +115,23 @@ class GraphAnalysisGUI(tk.Tk):
         self.toolbar.clear_button.configure(command=self._on_clear)
         self.toolbar.set_column_selected_callback(self._on_column_selected)
 
-        # paned is the lower pannel
+        # paned is the lower panel
         paned = ttk.Panedwindow(self, orient=tk.HORIZONTAL)
         paned.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        # creates the results table - where results show up
-        self.table = TableView(paned)
-        paned.add(self.table, weight=1)
+        # Create a container frame for the left panel (to switch between views)
+        self.left_panel_container = ttk.Frame(paned)
+        paned.add(self.left_panel_container, weight=1)
+
+        # Import the adjacency list view
+        from src.gui.adjacency_list_view import AdjacencyListView
+
+        # Create both views but only show one at a time
+        self.adjacency_list = AdjacencyListView(self.left_panel_container)
+        self.table = TableView(self.left_panel_container)
+
+        # Initially show nothing (will show adjacency list after preview)
+        # Both views will be packed/unpacked as needed
 
         # creates the plot visualization
         self.plot = PlotView(paned)
@@ -130,6 +140,16 @@ class GraphAnalysisGUI(tk.Tk):
         # creates the status bar
         self.status = StatusBarView(self)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
+    
+    def _show_adjacency_list(self):
+        """Show the adjacency list view and hide the analysis table"""
+        self.table.pack_forget()
+        self.adjacency_list.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+    def _show_analysis_table(self):
+        """Show the analysis table and hide the adjacency list"""
+        self.adjacency_list.pack_forget()
+        self.table.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
     def _browse_file(self):
         """
@@ -241,9 +261,13 @@ class GraphAnalysisGUI(tk.Tk):
 
     def _on_clear(self):
         self.table.clear()
+        self.adjacency_list.clear()
         self.plot.clear()
         self.toolbar.clear_node_selector()
         self.last_analysis_result = None
+        # Hide both views when clearing
+        self.table.pack_forget()
+        self.adjacency_list.pack_forget()
         self.status.set_status("Cleared")
 
     def _run_analysis_safe(self):
