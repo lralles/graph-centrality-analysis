@@ -36,7 +36,16 @@ class PlotRenderer:
         size = G.number_of_nodes()
 
         figure.clf()
+        # Create subplot that fills the entire figure area
         ax = figure.add_subplot(111)
+
+        # Remove axis borders and ticks to maximize graph area
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
 
         key = (result["gtype"], size)
         pos = self.layout_cache.get(key)
@@ -156,12 +165,25 @@ class PlotRenderer:
         if plot_options.get("show_node_names", True):
             nx.draw_networkx_labels(G, pos, ax=ax, font_size=8, font_color="#111")
 
-        ax.set_title(result["label"])
+        # Set a smaller title
+        ax.set_title(result["label"], fontsize=10)
+
+        # Remove margins and make the graph fill the whole area
+        ax.set_aspect('equal')
+        ax.margins(0)
+
+        # Use figure.tight_layout instead of plt.tight_layout for better control
+        figure.tight_layout(pad=0.05)
+
+        # Adjust subplot parameters to minimize whitespace with a bit more top margin for title
+        figure.subplots_adjust(left=0.02, right=0.98, top=0.90, bottom=0.02)
 
         # Only show colorbar if there's impact data (not for preview)
         if impact and any(impact.values()):
             sm = cm.ScalarMappable(cmap=cmap, norm=norm)
             sm.set_array([])
+            # Adjust colorbar positioning when present
+            figure.subplots_adjust(left=0.02, right=0.85, top=0.90, bottom=0.02)
             figure.colorbar(sm, ax=ax, fraction=0.04, pad=0.05).set_label("Δ centrality")
 
 

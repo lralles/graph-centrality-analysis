@@ -95,8 +95,11 @@ class GraphAnalysisController:
         file_ext = path.splitext(file_path)[1].lower()
         file_type = "CYS" if file_ext == '.cys' else "TSV"
 
+        # Create a readable list of removed nodes
+        removed_nodes_str = ", ".join(str(node) for node in removed_nodes)
+
         result = {
-            "label": f"Read from {file_type}",
+            "label": f"Removed Nodes: {removed_nodes_str}",
             "gtype": f"Read from {file_type}",
             "impact": impact,
             "graph": G,
