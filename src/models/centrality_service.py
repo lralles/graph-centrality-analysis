@@ -118,14 +118,14 @@ class CentralityAnalysisService:
             for centrality in selected_centralities:
                 new_val = centrality_results[centrality]['new'].get(node, np.nan)
                 diff_val = centrality_results[centrality]['diff'].get(node, np.nan)
-                row_data[f"New {centrality.title()}"] = new_val
-                row_data[f"Diff {centrality.title()}"] = diff_val
+                row_data[f"{centrality.title()}"] = new_val
+                row_data[f"Δ {centrality.title()}"] = diff_val
 
             # Add combined columns
             combined_new = sum(centrality_results[cent]['new'].get(node, 0) for cent in selected_centralities)
             combined_diff = sum(centrality_results[cent]['diff'].get(node, 0) for cent in selected_centralities)
-            row_data["Combined New"] = combined_new
-            row_data["Combined Diff"] = combined_diff
+            row_data["Combined"] = combined_new
+            row_data["Δ Combined"] = combined_diff
 
             centrality_table[node] = row_data
 

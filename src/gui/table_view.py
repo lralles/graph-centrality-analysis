@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import pandas as pd
-import csv
+import numpy as np
 
 class TableView(ttk.Frame):
     def __init__(self, master: tk.Misc):
@@ -149,7 +149,6 @@ class TableView(ttk.Frame):
                 self.sort_reverse[col] = False
         
         # Populate data
-        import numpy as np
         for idx, (node, row) in enumerate(df.iterrows()):
             values = []
             for col in self.columns:
