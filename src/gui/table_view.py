@@ -55,11 +55,11 @@ class TableView(ttk.Frame):
         """Sort treeview contents by the specified column"""
         if self.current_data is None:
             return
-            
+
         # Get all items and their values
-        items = [(self.tree.set(child, col) if col != "#0" else self.tree.item(child, "text"), child) 
+        items = [(self.tree.set(child, col) if col != "#0" else self.tree.item(child, "text"), child)
                 for child in self.tree.get_children('')]
-        
+
         # Sort items
         try:
             # Try numeric sort first
@@ -74,11 +74,25 @@ class TableView(ttk.Frame):
             # Update row colors
             tag = 'oddrow' if index % 2 else 'evenrow'
             self.tree.item(child, tags=(tag,))
-        
+
         # Update sort direction for next click
         self.sort_reverse[col] = not reverse
-        
-        # Update column heading to show sort direction
+
+        # Clear arrows from all column headings first
+        # Clear arrow from the tree column (#0)
+        tree_heading_text = self.tree.heading("#0")["text"]
+        if tree_heading_text:
+            base_text = tree_heading_text.rstrip(" ↑↓")
+            self.tree.heading("#0", text=base_text)
+
+        # Clear arrows from all other columns
+        for column in self.columns:
+            heading_text = self.tree.heading(column)["text"]
+            if heading_text:
+                base_text = heading_text.rstrip(" ↑↓")
+                self.tree.heading(column, text=base_text)
+
+        # Update current column heading to show sort direction
         heading_text = self.tree.heading(col)["text"]
         if heading_text:
             base_text = heading_text.rstrip(" ↑↓")
