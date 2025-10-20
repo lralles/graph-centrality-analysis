@@ -7,7 +7,6 @@ import pandas as pd
 from src.gui.toolbar_view import ToolbarView
 from src.gui.table_view import TableView
 from src.gui.plot_view import PlotView
-from src.gui.status_bar_view import StatusBarView
 from src.gui.plot_renderer import PlotRenderer
 from src.controllers.graph_analysis_controller import GraphAnalysisController
 from src.models.graph_loader import GraphLoader
@@ -115,6 +114,9 @@ class GraphAnalysisGUI(tk.Tk):
         self.toolbar.clear_button.configure(command=self._on_clear)
         self.toolbar.set_column_selected_callback(self._on_column_selected)
 
+        # Access status bar through toolbar
+        self.status = self.toolbar.status_bar
+
         # paned is the lower panel
         paned = ttk.Panedwindow(self, orient=tk.HORIZONTAL)
         paned.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
@@ -137,9 +139,7 @@ class GraphAnalysisGUI(tk.Tk):
         self.plot = PlotView(paned)
         paned.add(self.plot, weight=1)
 
-        # creates the status bar
-        self.status = StatusBarView(self)
-        self.status.pack(side=tk.BOTTOM, fill=tk.X)
+        # Note: Status bar has been moved to the toolbar header.
 
     def _show_adjacency_list(self):
         """Show the adjacency list view and hide the analysis table"""
@@ -191,6 +191,7 @@ class GraphAnalysisGUI(tk.Tk):
             if file_ext == '.cys':
                 self.toolbar.update_column_suggestions([])
                 self.toolbar.disable_column_selection()
+                self.toolbar.hide_tsv_options()  # Hide TSV-specific options for CYS files
 
                 loader = GraphLoader()
                 networks = loader.get_available_networks(path)
@@ -208,6 +209,7 @@ class GraphAnalysisGUI(tk.Tk):
             else:
                 # Hide network selector for non-.cys files
                 self.toolbar.hide_network_selector()
+                self.toolbar.show_tsv_options()  # Show TSV-specific options for TSV files
 
                 df = pd.read_csv(path, sep='\t', nrows=0)
                 columns = df.columns.tolist()
@@ -269,6 +271,8 @@ class GraphAnalysisGUI(tk.Tk):
         self.adjacency_list.clear()
         self.plot.clear()
         self.toolbar.clear_node_selector()
+        self.toolbar.hide_tsv_options()  # Hide TSV options when clearing
+        self.toolbar.hide_network_selector()  # Hide network selector when clearing
         self.last_analysis_result = None
         # Hide both views when clearing
         self.table.pack_forget()

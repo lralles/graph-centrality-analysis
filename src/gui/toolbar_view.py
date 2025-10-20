@@ -15,9 +15,10 @@ class ToolbarView(ttk.Frame):
         # Track collapsed state
         self.is_collapsed = False
 
-        # Create header frame with collapse/expand button
+        # Create header frame with collapse/expand button and status bar
         self.header_frame = ttk.Frame(self)
         self.header_frame.pack(side=tk.TOP, fill=tk.X, pady=(0, 5))
+        self.header_frame.columnconfigure(1, weight=1)  # Make middle column expand
 
         # Define toggle behavior as a nested function and attach to self
         def _toggle_collapse():
@@ -35,78 +36,101 @@ class ToolbarView(ttk.Frame):
         # Collapse/Expand button
         self.toggle_button = ttk.Button(self.header_frame, text="▼ Configuration",
                                        command=self._toggle_collapse, width=20)
-        self.toggle_button.pack(side=tk.LEFT)
+        self.toggle_button.grid(row=0, column=0, sticky=tk.W)
+
+        # Import and create status bar in the header
+        from .status_bar_view import StatusBarView
+        self.status_bar = StatusBarView(self.header_frame)
+        self.status_bar.grid(row=0, column=2, sticky=tk.E, padx=(10, 0))
 
         # Create collapsible content frame
         self.content_frame = ttk.Frame(self)
         self.content_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # File selection section
-        ttk.Label(self.content_frame, text="Graph file (TSV or CYS)").grid(row=0, column=0, sticky=tk.W, padx=4, pady=4)
+        file_frame = ttk.Frame(self.content_frame)
+        file_frame.grid(row=0, column=0, columnspan=4, sticky=(tk.W, tk.E), padx=4, pady=4)
+        file_frame.columnconfigure(1, weight=1)  # Make the entry expand
+
+        ttk.Label(file_frame, text="Graph file (TSV or CYS)").grid(row=0, column=0, sticky=tk.W, padx=(0, 4))
         self.file_var = tk.StringVar()
-        ttk.Entry(self.content_frame, textvariable=self.file_var, width=60, style="Tall.TEntry").grid(row=0, column=1, sticky=tk.W, padx=4, pady=4)
-        self.browse_button = ttk.Button(self.content_frame, text="Browse", style="Tall.TButton")
-        self.browse_button.grid(row=0, column=2, padx=4, pady=4, sticky=tk.W)
+        self.file_entry = ttk.Entry(file_frame, textvariable=self.file_var, style="Tall.TEntry")
+        self.file_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 4))
+        self.browse_button = ttk.Button(file_frame, text="Browse", style="Tall.TButton")
+        self.browse_button.grid(row=0, column=2, sticky=tk.E)
 
         # Network selection section (for .cys files)
         self.network_label = ttk.Label(self.content_frame, text="Network")
         self.network_label.grid(row=1, column=0, sticky=tk.W, padx=4, pady=4)
         self.network_var = tk.StringVar()
         self.network_combo = ttk.Combobox(self.content_frame, textvariable=self.network_var, width=40, style="Tall.TCombobox", state="readonly")
-        self.network_combo.grid(row=1, column=1, columnspan=2, sticky=tk.W, padx=4, pady=4)
+        self.network_combo.grid(row=1, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
         self.network_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
         # Initially hide network selector
         self.network_label.grid_remove()
         self.network_combo.grid_remove()
 
-        # Column selection section
-        ttk.Label(self.content_frame, text="Source Node Column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
+        # TSV-specific options frame (will be hidden/shown based on file type)
+        self.tsv_options_frame = ttk.Frame(self.content_frame)
+        self.tsv_options_frame.grid(row=2, column=0, columnspan=4, sticky=(tk.W, tk.E), padx=4, pady=4)
+        self.tsv_options_frame.columnconfigure(1, weight=1)
+        self.tsv_options_frame.columnconfigure(3, weight=1)
+
+        # Column selection section (TSV-specific)
+        ttk.Label(self.tsv_options_frame, text="Source Node Column").grid(row=0, column=0, sticky=tk.W, padx=(0, 4), pady=4)
         self.edge1_var = tk.StringVar()
-        self.edge1_combo = ttk.Combobox(self.content_frame, textvariable=self.edge1_var, width=18, style="Tall.TCombobox", state="readonly")
-        self.edge1_combo.grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
+        self.edge1_combo = ttk.Combobox(self.tsv_options_frame, textvariable=self.edge1_var, width=18, style="Tall.TCombobox", state="readonly")
+        self.edge1_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 8), pady=4)
         self.edge1_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
-        ttk.Label(self.content_frame, text="Destination Node Column").grid(row=2, column=2, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(self.tsv_options_frame, text="Destination Node Column").grid(row=0, column=2, sticky=tk.W, padx=(0, 4), pady=4)
         self.edge2_var = tk.StringVar()
-        self.edge2_combo = ttk.Combobox(self.content_frame, textvariable=self.edge2_var, width=18, style="Tall.TCombobox", state="readonly")
-        self.edge2_combo.grid(row=2, column=3, sticky=tk.W, padx=4, pady=4)
+        self.edge2_combo = ttk.Combobox(self.tsv_options_frame, textvariable=self.edge2_var, width=18, style="Tall.TCombobox", state="readonly")
+        self.edge2_combo.grid(row=0, column=3, sticky=(tk.W, tk.E), padx=0, pady=4)
         self.edge2_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
-        ttk.Label(self.content_frame, text="Weight Column").grid(row=3, column=0, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(self.tsv_options_frame, text="Weight Column").grid(row=1, column=0, sticky=tk.W, padx=(0, 4), pady=4)
         self.weight_var = tk.StringVar()
-        self.weight_combo = ttk.Combobox(self.content_frame, textvariable=self.weight_var, width=18, style="Tall.TCombobox", state="readonly")
-        self.weight_combo.grid(row=3, column=1, sticky=tk.W, padx=4, pady=4)
+        self.weight_combo = ttk.Combobox(self.tsv_options_frame, textvariable=self.weight_var, width=18, style="Tall.TCombobox", state="readonly")
+        self.weight_combo.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(0, 8), pady=4)
         self.weight_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
-        # Self-edges removal option and directed/undirected toggle
+        # Self-edges removal option and directed/undirected toggle (TSV-specific)
         self.remove_self_edges_var = tk.BooleanVar(value=True)
         self.directed_graph_var = tk.BooleanVar(value=False)
 
         self.remove_self_edges_cb = ttk.Checkbutton(
-            self.content_frame,
+            self.tsv_options_frame,
             text="Remove self-edges (loops)",
             variable=self.remove_self_edges_var,
             command=self._on_column_selected
         )
-        self.remove_self_edges_cb.grid(row=3, column=2, columnspan=1, sticky=tk.W, padx=4, pady=4)
+        self.remove_self_edges_cb.grid(row=1, column=2, sticky=tk.W, padx=(0, 4), pady=4)
 
         self.directed_graph_cb = ttk.Checkbutton(
-            self.content_frame,
+            self.tsv_options_frame,
             text="Directed graph",
             variable=self.directed_graph_var,
             command=self._on_column_selected
         )
-        self.directed_graph_cb.grid(row=3, column=3, sticky=tk.W, padx=4, pady=4)
+        self.directed_graph_cb.grid(row=1, column=3, sticky=tk.W, padx=0, pady=4)
+
+        # Initially hide TSV-specific options
+        self.tsv_options_frame.grid_remove()
 
         # Node selector with multi-select
-        ttk.Label(self.content_frame, text="Nodes to remove").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Nodes to remove").grid(row=3, column=0, sticky=tk.NW, padx=4, pady=4)
         self.node_selector = NodeSelectorView(self.content_frame)
-        self.node_selector.grid(row=4, column=1, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=4, pady=4)
+        self.node_selector.grid(row=3, column=1, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=4, pady=4)
 
-        ttk.Label(self.content_frame, text="Centrality measures").grid(row=5, column=0, sticky=tk.NW, padx=4, pady=4)
+        # Centrality measures - use full horizontal space
+        ttk.Label(self.content_frame, text="Centrality measures").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
         self.centrality_vars = {}
         centralities_frame = ttk.Frame(self.content_frame)
-        centralities_frame.grid(row=5, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
+        centralities_frame.grid(row=4, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
+        centralities_frame.columnconfigure(0, weight=1)
+        centralities_frame.columnconfigure(1, weight=1)
+        centralities_frame.columnconfigure(2, weight=1)
 
         # Create user-friendly display names for centrality measures
         centrality_display_names = {
@@ -129,9 +153,9 @@ class ToolbarView(ttk.Frame):
             self.centrality_vars[key] = var
 
         # Plot options
-        ttk.Label(self.content_frame, text="Plot options").grid(row=6, column=0, sticky=tk.NW, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Plot options").grid(row=5, column=0, sticky=tk.NW, padx=4, pady=4)
         plot_options_frame = ttk.Frame(self.content_frame)
-        plot_options_frame.grid(row=6, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
+        plot_options_frame.grid(row=5, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
 
         self.show_node_names_var = tk.BooleanVar(value=True)
         self.show_node_names_cb = ttk.Checkbutton(plot_options_frame, text="Show node names", variable=self.show_node_names_var)
@@ -147,7 +171,7 @@ class ToolbarView(ttk.Frame):
 
         # Action buttons
         actions_frame = ttk.Frame(self.content_frame)
-        actions_frame.grid(row=7, column=0, columnspan=4, sticky=tk.W, padx=0, pady=(6, 0))
+        actions_frame.grid(row=6, column=0, columnspan=4, sticky=(tk.W, tk.E), padx=0, pady=(6, 0))
         self.run_button = ttk.Button(actions_frame, text="Run Analysis")
         self.run_button.pack(side=tk.LEFT, padx=(0, 6))
         self.refresh_plot_button = ttk.Button(actions_frame, text="Refresh Plot")
@@ -159,6 +183,8 @@ class ToolbarView(ttk.Frame):
 
         # Configure grid weights for proper resizing
         self.content_frame.columnconfigure(1, weight=1)
+        self.content_frame.columnconfigure(2, weight=1)
+        self.content_frame.columnconfigure(3, weight=1)
         self.content_frame.rowconfigure(3, weight=1)
 
     def _toggle_collapse(self):
@@ -252,6 +278,8 @@ class ToolbarView(ttk.Frame):
 
     def hide_network_selector(self):
         """Hide the network selector (for non-.cys files)"""
+    def hide_network_selector(self):
+        """Hide the network selector (for non-.cys files)"""
         self.network_label.grid_remove()
         self.network_combo.grid_remove()
         self.network_var.set("")
@@ -261,8 +289,16 @@ class ToolbarView(ttk.Frame):
         self.network_label.grid()
         self.network_combo.grid()
 
+    def show_tsv_options(self):
+        """Show TSV-specific options (column selection, self-edges, directed graph)"""
+        self.tsv_options_frame.grid()
+
+    def hide_tsv_options(self):
+        """Hide TSV-specific options (column selection, self-edges, directed graph)"""
+        self.tsv_options_frame.grid_remove()
+
     def get_selected_network(self):
-        """Get the selected network name"""
+        """Get the currently selected network name"""
         return self.network_var.get()
 
 
