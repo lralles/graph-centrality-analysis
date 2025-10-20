@@ -5,7 +5,7 @@ import os
 import networkxgmml
 
 class GraphLoader:
-    def load(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True, network_name: str = None) -> nx.Graph:
+    def load(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True, network_name: str = None, directed: bool = False) -> nx.Graph:
         """
         Load a graph from either a TSV file or a Cytoscape .cys file.
 
@@ -16,9 +16,10 @@ class GraphLoader:
             path: Path to the file (either .tsv or .cys)
             remove_self_edges: Whether to remove self-edges
             network_name: Name of the network to load from .cys file (optional, defaults to first network)
+            directed: Whether to create a directed graph (default: False for undirected)
 
         Returns:
-            A NetworkX Graph object
+            A NetworkX Graph or DiGraph object
         """
         file_ext = os.path.splitext(path)[1].lower()
 
@@ -26,12 +27,12 @@ class GraphLoader:
             return self._load_cys(path, remove_self_edges, network_name)
         else:
             # Default to TSV loading for .tsv or other files
-            return self._load_tsv(edge1, edge2, weight, path, remove_self_edges)
+            return self._load_tsv(edge1, edge2, weight, path, remove_self_edges, directed)
 
-    def _load_tsv(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True) -> nx.Graph:
+    def _load_tsv(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True, directed: bool = False) -> nx.Graph:
         """Load graph from TSV file."""
         df = pd.read_csv(path, sep="\t")
-        G = nx.Graph()
+        G = nx.DiGraph() if directed else nx.Graph()
         for _, row in df.iterrows():
             if remove_self_edges and row[edge1] == row[edge2]:
                 continue
@@ -73,10 +74,7 @@ class GraphLoader:
 
             # Extract and read the XGMML file
             with zip_ref.open(xgmml_file) as xgmml_content:
-                # Parse XGMML using networkxgmml
                 G_directed = networkxgmml.XGMMLReader(xgmml_content)
-
-                # Convert to undirected graph (as the original code uses nx.Graph())
                 G = nx.Graph()
 
                 # Create a mapping from original node IDs to labels (node names)

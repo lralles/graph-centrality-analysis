@@ -78,10 +78,25 @@ class ToolbarView(ttk.Frame):
         self.weight_combo.grid(row=3, column=1, sticky=tk.W, padx=4, pady=4)
         self.weight_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
-        # Self-edges removal option
+        # Self-edges removal option and directed/undirected toggle
         self.remove_self_edges_var = tk.BooleanVar(value=True)
-        self.remove_self_edges_cb = ttk.Checkbutton(self.content_frame, text="Remove self-edges (loops)", variable=self.remove_self_edges_var, command=self._on_column_selected)
-        self.remove_self_edges_cb.grid(row=3, column=2, columnspan=2, sticky=tk.W, padx=4, pady=4)
+        self.directed_graph_var = tk.BooleanVar(value=False)
+
+        self.remove_self_edges_cb = ttk.Checkbutton(
+            self.content_frame,
+            text="Remove self-edges (loops)",
+            variable=self.remove_self_edges_var,
+            command=self._on_column_selected
+        )
+        self.remove_self_edges_cb.grid(row=3, column=2, columnspan=1, sticky=tk.W, padx=4, pady=4)
+
+        self.directed_graph_cb = ttk.Checkbutton(
+            self.content_frame,
+            text="Directed graph",
+            variable=self.directed_graph_var,
+            command=self._on_column_selected
+        )
+        self.directed_graph_cb.grid(row=3, column=3, sticky=tk.W, padx=4, pady=4)
 
         # Node selector with multi-select
         ttk.Label(self.content_frame, text="Nodes to remove").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
@@ -177,6 +192,7 @@ class ToolbarView(ttk.Frame):
         self.edge2_combo.configure(state="disabled")
         self.weight_combo.configure(state="disabled")
         self.remove_self_edges_cb.configure(state="disabled")
+        self.directed_graph_cb.configure(state="disabled")
 
     def enable_column_selection(self):
         """Enable column selection widgets"""
@@ -184,6 +200,7 @@ class ToolbarView(ttk.Frame):
         self.edge2_combo.configure(state="readonly")
         self.weight_combo.configure(state="readonly")
         self.remove_self_edges_cb.configure(state="normal")
+        self.directed_graph_cb.configure(state="normal")
 
     def _on_column_selected(self, _event=None):
         """Handle column selection events"""

@@ -22,6 +22,7 @@ class GraphAnalysisController:
         edge2 = self.app.toolbar.edge2_var.get().strip()
         weight = self.app.toolbar.weight_var.get().strip()
         remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
+        directed = self.app.toolbar.directed_graph_var.get()
         network_name = self.app.toolbar.get_selected_network()
 
         # Check if file is TSV, if is and graph info is not available, skip
@@ -32,7 +33,7 @@ class GraphAnalysisController:
 
         try:
             self.app.status.set_status("Loading preview...")
-            G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name)
+            G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name, directed)
 
             # uses the same visualization engine as the impact, but with different options
             preview_result = {
@@ -78,6 +79,7 @@ class GraphAnalysisController:
         removed_nodes = self.app.toolbar.get_selected_nodes()
         selected_centralities = [k for k, v in self.app.toolbar.centrality_vars.items() if v.get()]
         remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
+        directed = self.app.toolbar.directed_graph_var.get()
         network_name = self.app.toolbar.get_selected_network()
 
         if not file_path:
@@ -87,7 +89,7 @@ class GraphAnalysisController:
         if not selected_centralities:
             raise ValueError("Please select at least one centrality measure")
 
-        G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name)
+        G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name, directed)
         df, impact = self.analysis.compute(G, removed_nodes, selected_centralities)
 
         # Switch to analysis table view and populate it
