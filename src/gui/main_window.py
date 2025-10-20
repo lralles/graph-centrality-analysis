@@ -97,7 +97,7 @@ class GraphAnalysisGUI(tk.Tk):
         )
         style.configure("Treeview.Heading", background=subtle, foreground=fg, font=("Segoe UI", 10, "bold"))
         style.map("Treeview", background=[("selected", "#094771")], foreground=[("selected", "#ffffff")])
-        
+
         # divider style config
         style.configure("Sash", background=subtle)
 
@@ -140,7 +140,7 @@ class GraphAnalysisGUI(tk.Tk):
         # creates the status bar
         self.status = StatusBarView(self)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
-    
+
     def _show_adjacency_list(self):
         """Show the adjacency list view and hide the analysis table"""
         self.table.pack_forget()
@@ -165,11 +165,11 @@ class GraphAnalysisGUI(tk.Tk):
                 ("All files", "*.*")
             ]
         )
-        
+
         if path:
             # displays file name is toolbar
             self.toolbar.file_var.set(path)
-            
+
             # gets file extensior
             _, ext = os.path.splitext(path)
             ext = ext.lower()
@@ -196,14 +196,19 @@ class GraphAnalysisGUI(tk.Tk):
                 networks = loader.get_available_networks(path)
 
                 if networks:
+                    self.toolbar.update_network_list(networks)
                     self.status.set_status(f"Loaded .cys file with {len(networks)} network(s)")
                 else:
+                    self.toolbar.hide_network_selector()
                     self.status.set_status("Loaded .cys file")
 
                 # avoid unbind bugs (method called while constructor is executing)
                 if hasattr(self, '_controller'):
                     self.after(100, self._controller.generate_preview)
             else:
+                # Hide network selector for non-.cys files
+                self.toolbar.hide_network_selector()
+
                 df = pd.read_csv(path, sep='\t', nrows=0)
                 columns = df.columns.tolist()
                 self.toolbar.update_column_suggestions(columns)

@@ -48,39 +48,50 @@ class ToolbarView(ttk.Frame):
         self.browse_button = ttk.Button(self.content_frame, text="Browse", style="Tall.TButton")
         self.browse_button.grid(row=0, column=2, padx=4, pady=4, sticky=tk.W)
 
+        # Network selection section (for .cys files)
+        self.network_label = ttk.Label(self.content_frame, text="Network")
+        self.network_label.grid(row=1, column=0, sticky=tk.W, padx=4, pady=4)
+        self.network_var = tk.StringVar()
+        self.network_combo = ttk.Combobox(self.content_frame, textvariable=self.network_var, width=40, style="Tall.TCombobox", state="readonly")
+        self.network_combo.grid(row=1, column=1, columnspan=2, sticky=tk.W, padx=4, pady=4)
+        self.network_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
+        # Initially hide network selector
+        self.network_label.grid_remove()
+        self.network_combo.grid_remove()
+
         # Column selection section
-        ttk.Label(self.content_frame, text="Source Node Column").grid(row=1, column=0, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Source Node Column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
         self.edge1_var = tk.StringVar()
         self.edge1_combo = ttk.Combobox(self.content_frame, textvariable=self.edge1_var, width=18, style="Tall.TCombobox", state="readonly")
-        self.edge1_combo.grid(row=1, column=1, sticky=tk.W, padx=4, pady=4)
+        self.edge1_combo.grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
         self.edge1_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
-        ttk.Label(self.content_frame, text="Destination Node Column").grid(row=1, column=2, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Destination Node Column").grid(row=2, column=2, sticky=tk.W, padx=4, pady=4)
         self.edge2_var = tk.StringVar()
         self.edge2_combo = ttk.Combobox(self.content_frame, textvariable=self.edge2_var, width=18, style="Tall.TCombobox", state="readonly")
-        self.edge2_combo.grid(row=1, column=3, sticky=tk.W, padx=4, pady=4)
+        self.edge2_combo.grid(row=2, column=3, sticky=tk.W, padx=4, pady=4)
         self.edge2_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
-        ttk.Label(self.content_frame, text="Weight Column").grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Weight Column").grid(row=3, column=0, sticky=tk.W, padx=4, pady=4)
         self.weight_var = tk.StringVar()
         self.weight_combo = ttk.Combobox(self.content_frame, textvariable=self.weight_var, width=18, style="Tall.TCombobox", state="readonly")
-        self.weight_combo.grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
+        self.weight_combo.grid(row=3, column=1, sticky=tk.W, padx=4, pady=4)
         self.weight_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
         # Self-edges removal option
         self.remove_self_edges_var = tk.BooleanVar(value=True)
         self.remove_self_edges_cb = ttk.Checkbutton(self.content_frame, text="Remove self-edges (loops)", variable=self.remove_self_edges_var, command=self._on_column_selected)
-        self.remove_self_edges_cb.grid(row=2, column=2, columnspan=2, sticky=tk.W, padx=4, pady=4)
+        self.remove_self_edges_cb.grid(row=3, column=2, columnspan=2, sticky=tk.W, padx=4, pady=4)
 
         # Node selector with multi-select
-        ttk.Label(self.content_frame, text="Nodes to remove").grid(row=3, column=0, sticky=tk.NW, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Nodes to remove").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
         self.node_selector = NodeSelectorView(self.content_frame)
-        self.node_selector.grid(row=3, column=1, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=4, pady=4)
+        self.node_selector.grid(row=4, column=1, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=4, pady=4)
 
-        ttk.Label(self.content_frame, text="Centrality measures").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Centrality measures").grid(row=5, column=0, sticky=tk.NW, padx=4, pady=4)
         self.centrality_vars = {}
         centralities_frame = ttk.Frame(self.content_frame)
-        centralities_frame.grid(row=4, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
+        centralities_frame.grid(row=5, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
 
         # Create user-friendly display names for centrality measures
         centrality_display_names = {
@@ -103,9 +114,9 @@ class ToolbarView(ttk.Frame):
             self.centrality_vars[key] = var
 
         # Plot options
-        ttk.Label(self.content_frame, text="Plot options").grid(row=5, column=0, sticky=tk.NW, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Plot options").grid(row=6, column=0, sticky=tk.NW, padx=4, pady=4)
         plot_options_frame = ttk.Frame(self.content_frame)
-        plot_options_frame.grid(row=5, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
+        plot_options_frame.grid(row=6, column=1, columnspan=3, sticky=tk.W, padx=4, pady=4)
 
         self.show_node_names_var = tk.BooleanVar(value=True)
         self.show_node_names_cb = ttk.Checkbutton(plot_options_frame, text="Show node names", variable=self.show_node_names_var)
@@ -121,7 +132,7 @@ class ToolbarView(ttk.Frame):
 
         # Action buttons
         actions_frame = ttk.Frame(self.content_frame)
-        actions_frame.grid(row=6, column=0, columnspan=4, sticky=tk.W, padx=0, pady=(6, 0))
+        actions_frame.grid(row=7, column=0, columnspan=4, sticky=tk.W, padx=0, pady=(6, 0))
         self.run_button = ttk.Button(actions_frame, text="Run Analysis")
         self.run_button.pack(side=tk.LEFT, padx=(0, 6))
         self.refresh_plot_button = ttk.Button(actions_frame, text="Refresh Plot")
@@ -204,5 +215,37 @@ class ToolbarView(ttk.Frame):
         """Programmatically expand the configuration section"""
         if self.is_collapsed:
             self._expand()
+
+    def update_network_list(self, networks):
+        """Update the network list in the network selector"""
+        self.network_combo['values'] = networks
+        if networks:
+            # Select first network by default and ensure the selector is visible
+            try:
+                self.network_combo.current(0)
+            except Exception:
+                # Ignore if setting current fails for some reason
+                pass
+            self.network_label.grid()
+            self.network_combo.grid()
+        else:
+            self.network_label.grid_remove()
+            self.network_combo.grid_remove()
+            self.network_var.set("")
+
+    def hide_network_selector(self):
+        """Hide the network selector (for non-.cys files)"""
+        self.network_label.grid_remove()
+        self.network_combo.grid_remove()
+        self.network_var.set("")
+
+    def show_network_selector(self):
+        """Show the network selector (for .cys files)"""
+        self.network_label.grid()
+        self.network_combo.grid()
+
+    def get_selected_network(self):
+        """Get the selected network name"""
+        return self.network_var.get()
 
 

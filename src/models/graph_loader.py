@@ -5,7 +5,7 @@ import os
 import networkxgmml
 
 class GraphLoader:
-    def load(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True) -> nx.Graph:
+    def load(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True, network_name: str = None) -> nx.Graph:
         """
         Load a graph from either a TSV file or a Cytoscape .cys file.
 
@@ -15,6 +15,7 @@ class GraphLoader:
             weight: Column name for edge weight (used for TSV files)
             path: Path to the file (either .tsv or .cys)
             remove_self_edges: Whether to remove self-edges
+            network_name: Name of the network to load from .cys file (optional, defaults to first network)
 
         Returns:
             A NetworkX Graph object
@@ -22,7 +23,7 @@ class GraphLoader:
         file_ext = os.path.splitext(path)[1].lower()
 
         if file_ext == '.cys':
-            return self._load_cys(path, remove_self_edges)
+            return self._load_cys(path, remove_self_edges, network_name)
         else:
             # Default to TSV loading for .tsv or other files
             return self._load_tsv(edge1, edge2, weight, path, remove_self_edges)
@@ -37,12 +38,17 @@ class GraphLoader:
             G.add_edge(row[edge1], row[edge2], weight=row[weight])
         return G
 
-    def _load_cys(self, path: str, remove_self_edges: bool = True) -> nx.Graph:
+    def _load_cys(self, path: str, remove_self_edges: bool = True, network_name: str = None) -> nx.Graph:
         """
         Load graph from Cytoscape .cys file.
 
         A .cys file is a ZIP archive containing XGMML files.
-        This method extracts the first XGMML file found and loads it.
+        This method extracts the specified XGMML file (or the first one if not specified) and loads it.
+
+        Args:
+            path: Path to the .cys file
+            remove_self_edges: Whether to remove self-edges
+            network_name: Name of the network (XGMML file) to load. If None, loads the first network.
         """
         with zipfile.ZipFile(path, 'r') as zip_ref:
             # Find all XGMML files in the archive
@@ -51,8 +57,19 @@ class GraphLoader:
             if not xgmml_files:
                 raise ValueError("No XGMML files found in the .cys archive")
 
-            # Use the first XGMML file found
-            xgmml_file = xgmml_files[0]
+            # Select the XGMML file to load
+            if network_name:
+                # Find the file matching the network name
+                xgmml_file = None
+                for f in xgmml_files:
+                    if os.path.basename(f) == network_name:
+                        xgmml_file = f
+                        break
+                if not xgmml_file:
+                    raise ValueError(f"Network '{network_name}' not found in .cys file. Available networks: {[os.path.basename(f) for f in xgmml_files]}")
+            else:
+                # Use the first XGMML file found
+                xgmml_file = xgmml_files[0]
 
             # Extract and read the XGMML file
             with zip_ref.open(xgmml_file) as xgmml_content:

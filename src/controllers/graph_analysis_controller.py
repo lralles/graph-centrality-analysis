@@ -17,11 +17,12 @@ class GraphAnalysisController:
         file_path = self.app.toolbar.file_var.get().strip()
         if not file_path:
             return
-        
+
         edge1 = self.app.toolbar.edge1_var.get().strip()
         edge2 = self.app.toolbar.edge2_var.get().strip()
         weight = self.app.toolbar.weight_var.get().strip()
         remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
+        network_name = self.app.toolbar.get_selected_network()
 
         # Check if file is TSV, if is and graph info is not available, skip
         file_ext = path.splitext(file_path)[1].lower() if file_path else ""
@@ -31,7 +32,7 @@ class GraphAnalysisController:
 
         try:
             self.app.status.set_status("Loading preview...")
-            G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges)
+            G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name)
 
             # uses the same visualization engine as the impact, but with different options
             preview_result = {
@@ -77,6 +78,7 @@ class GraphAnalysisController:
         removed_nodes = self.app.toolbar.get_selected_nodes()
         selected_centralities = [k for k, v in self.app.toolbar.centrality_vars.items() if v.get()]
         remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
+        network_name = self.app.toolbar.get_selected_network()
 
         if not file_path:
             raise ValueError("Please select a graph file")
@@ -85,7 +87,7 @@ class GraphAnalysisController:
         if not selected_centralities:
             raise ValueError("Please select at least one centrality measure")
 
-        G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges)
+        G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name)
         df, impact = self.analysis.compute(G, removed_nodes, selected_centralities)
 
         # Switch to analysis table view and populate it
@@ -117,4 +119,5 @@ class GraphAnalysisController:
         }
 
         self.renderer.render(self.app.plot.figure, result, plot_options)
+
 
