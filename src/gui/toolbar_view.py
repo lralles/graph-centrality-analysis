@@ -157,17 +157,28 @@ class ToolbarView(ttk.Frame):
         plot_options_frame = ttk.Frame(self.content_frame)
         plot_options_frame.grid(row=5, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
 
+        # Layout type selection
+        layout_frame = ttk.Frame(plot_options_frame)
+        layout_frame.grid(row=0, column=0, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=2)
+
+        ttk.Label(layout_frame, text="Layout:").grid(row=0, column=0, padx=(0, 4), sticky=tk.W)
+        self.layout_type_var = tk.StringVar(value="Spring")
+        self.layout_type_combo = ttk.Combobox(layout_frame, textvariable=self.layout_type_var,
+                                            values=["Spring", "Circular"],
+                                            state="readonly", width=12)
+        self.layout_type_combo.grid(row=0, column=1, padx=4, sticky=tk.W)
+
         self.show_node_names_var = tk.BooleanVar(value=True)
         self.show_node_names_cb = ttk.Checkbutton(plot_options_frame, text="Show node names", variable=self.show_node_names_var)
-        self.show_node_names_cb.grid(row=0, column=0, padx=4, pady=2, sticky=tk.W)
+        self.show_node_names_cb.grid(row=1, column=0, padx=4, pady=2, sticky=tk.W)
 
         self.edge_thickness_by_weight_var = tk.BooleanVar(value=True)
         self.edge_thickness_by_weight_cb = ttk.Checkbutton(plot_options_frame, text="Edge thickness by weight", variable=self.edge_thickness_by_weight_var)
-        self.edge_thickness_by_weight_cb.grid(row=0, column=1, padx=4, pady=2, sticky=tk.W)
+        self.edge_thickness_by_weight_cb.grid(row=1, column=1, padx=4, pady=2, sticky=tk.W)
 
         self.mark_removed_edges_var = tk.BooleanVar(value=True)
         self.mark_removed_edges_cb = ttk.Checkbutton(plot_options_frame, text="Mark removed edges", variable=self.mark_removed_edges_var)
-        self.mark_removed_edges_cb.grid(row=0, column=2, padx=4, pady=2, sticky=tk.W)
+        self.mark_removed_edges_cb.grid(row=1, column=2, padx=4, pady=2, sticky=tk.W)
 
         # Action buttons
         actions_frame = ttk.Frame(self.content_frame)

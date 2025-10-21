@@ -10,6 +10,19 @@ class PlotRenderer:
     def __init__(self, layout_cache):
         self.layout_cache = layout_cache
 
+    def _calculate_layout(self, G, layout_type: str, size: int):
+        if layout_type == "Circular":
+            # Use circular layout with better node positioning
+            pos = nx.circular_layout(G, scale=1.2)
+
+        else:  # Default to Spring layout
+            if size >= 500:
+                pos = nx.spring_layout(G, seed=42, k=1 / np.sqrt(size))
+            else:
+                pos = nx.spring_layout(G, seed=42)
+
+        return pos
+
     def render(self, figure: Figure, result: dict[str, Any], plot_options: dict[str, bool] = None) -> None:
         """
         Render the graph plot with configurable options.
@@ -21,6 +34,7 @@ class PlotRenderer:
                 - show_node_names: Whether to display node labels
                 - edge_thickness_by_weight: Whether edge thickness reflects weight
                 - mark_removed_edges: Whether to highlight edges connected to removed nodes
+                - layout_type: Layout algorithm to use ("Spring", "Circular")
         """
         # Default plot options
         if plot_options is None:
@@ -28,6 +42,7 @@ class PlotRenderer:
                 "show_node_names": True,
                 "edge_thickness_by_weight": True,
                 "mark_removed_edges": True,
+                "layout_type": "Spring",
             }
 
         G = result["graph"]
@@ -45,15 +60,16 @@ class PlotRenderer:
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
+        ax.spines['left'].set_visible(False)  # Also hide the left spine
 
-        key = (result["gtype"], size)
+        # Get layout type from plot options
+        layout_type = plot_options.get("layout_type", "Spring")
+
+        # Create cache key that includes layout type
+        key = (result["gtype"], size, layout_type)
         pos = self.layout_cache.get(key)
         if pos is None:
-            if size >= 500:
-                pos = nx.spring_layout(G, seed=42, k=1 / np.sqrt(size))
-            else:
-                pos = nx.spring_layout(G, seed=42)
+            pos = self._calculate_layout(G, layout_type, size)
             self.layout_cache.set(key, pos)
 
         max_abs = max((abs(v) for v in impact.values()), default=0.0)

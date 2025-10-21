@@ -118,8 +118,8 @@ class GraphAnalysisController:
             "show_node_names": self.app.toolbar.show_node_names_var.get(),
             "edge_thickness_by_weight": self.app.toolbar.edge_thickness_by_weight_var.get(),
             "mark_removed_edges": self.app.toolbar.mark_removed_edges_var.get(),
+            "layout_type": self.app.toolbar.layout_type_var.get(),
         }
 
         self.renderer.render(self.app.plot.figure, result, plot_options)
-
 

@@ -305,6 +305,7 @@ class GraphAnalysisGUI(tk.Tk):
             "show_node_names": self.toolbar.show_node_names_var.get(),
             "edge_thickness_by_weight": self.toolbar.edge_thickness_by_weight_var.get(),
             "mark_removed_edges": self.toolbar.mark_removed_edges_var.get(),
+            "layout_type": self.toolbar.layout_type_var.get(),
         }
 
         self._controller.renderer.render(self.plot.figure, self.last_analysis_result, plot_options)
