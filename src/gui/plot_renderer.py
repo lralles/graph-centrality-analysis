@@ -5,7 +5,6 @@ from typing import Any
 from matplotlib import cm, colors
 import networkx as nx
 
-
 class PlotRenderer:
     def __init__(self, layout_cache):
         self.layout_cache = layout_cache

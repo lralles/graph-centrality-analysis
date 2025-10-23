@@ -1,6 +1,5 @@
 from src.gui.main_window import GraphAnalysisGUI
 
-
 def main() -> None:
     app = GraphAnalysisGUI()
     app.mainloop()

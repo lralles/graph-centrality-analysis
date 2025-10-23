@@ -44,6 +44,9 @@ class GraphAnalysisGUI(tk.Tk):
             renderer=PlotRenderer(LayoutCache()),
         )
 
+        # Initialize with a random Watts-Strogatz graph of size 100
+        self._initialize_with_random_graph()
+
     def _init_style(self):
         """
         Initializes the global styles of the widgets, sets colors and common configs
@@ -357,5 +360,20 @@ class GraphAnalysisGUI(tk.Tk):
 
         self._controller.renderer.render(self.plot.figure, self.last_analysis_result, plot_options)
         self.plot.draw_idle()
+
+    def _initialize_with_random_graph(self):
+        """Initialize the application with a random Watts-Strogatz graph of size 100"""
+        try:
+            self.toolbar.graph_source_var.set("random")
+            self.toolbar.random_graph_type_var.set("watts_strogatz")
+            self.toolbar.random_graph_size_var.set("60")
+
+            self.toolbar._on_graph_source_changed(None)
+
+            self._generate_random_graph()
+
+        except Exception as e:
+            # If initialization fails, just continue without the random graph
+            print(f"Failed to initialize with random graph: {e}")
 
 
