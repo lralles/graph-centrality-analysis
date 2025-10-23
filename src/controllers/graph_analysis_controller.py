@@ -76,10 +76,14 @@ class GraphAnalysisController:
         directed = self.app.toolbar.directed_graph_var.get()
         network_name = self.app.toolbar.get_selected_network()
 
-        # Check if file is TSV, if is and graph info is not available, skip
+        # Only require column parameters for TSV files. GEXF/CYS (and other formats) may not need columns.
         file_ext = path.splitext(file_path)[1].lower() if file_path else ""
+        # If no file path provided, nothing to load
+        if not file_path:
+            return
+        # If TSV, require edge/weight column names; other formats (e.g. .gexf, .cys) can proceed without them.
         if file_ext == ".tsv":
-            if not file_path or not edge1 or not edge2 or not weight:
+            if not edge1 or not edge2 or not weight:
                 return
 
         try:
@@ -184,6 +188,8 @@ class GraphAnalysisController:
                     file_type = f"CYS file (network: {network_name})"
                 else:
                     file_type = "CYS file"
+            elif file_ext == '.gexf':
+                file_type = "GEXF file"
             else:
                 file_type = f"{file_ext.upper()} file"
 

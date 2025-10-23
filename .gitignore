@@ -7,3 +7,4 @@ build
 Read from TSV.svg
 *.cys
 *.spec
+*.gexf

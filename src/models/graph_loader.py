@@ -7,13 +7,13 @@ import networkxgmml
 class GraphLoader:
     def load(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True, network_name: str = None, directed: bool = False) -> nx.Graph:
         """
-        Load a graph from either a TSV file or a Cytoscape .cys file.
+        Load a graph from a TSV file, a Cytoscape .cys file, or a GEXF file.
 
         Args:
             edge1: Column name for source node (used for TSV files)
             edge2: Column name for target node (used for TSV files)
             weight: Column name for edge weight (used for TSV files)
-            path: Path to the file (either .tsv or .cys)
+            path: Path to the file (either .tsv, .cys, or .gexf)
             remove_self_edges: Whether to remove self-edges
             network_name: Name of the network to load from .cys file (optional, defaults to first network)
             directed: Whether to create a directed graph (default: False for undirected)
@@ -25,9 +25,35 @@ class GraphLoader:
 
         if file_ext == '.cys':
             return self._load_cys(path, remove_self_edges, network_name)
+        elif file_ext == '.gexf':
+            return self._load_gexf(path, remove_self_edges, directed)
         else:
             # Default to TSV loading for .tsv or other files
             return self._load_tsv(edge1, edge2, weight, path, remove_self_edges, directed)
+
+    def _load_gexf(self, path: str, remove_self_edges: bool = True, directed: bool = False) -> nx.Graph:
+        """
+        Load a graph from a GEXF file.
+
+        This reads the GEXF using NetworkX and optionally converts the graph
+        to directed/undirected based on the `directed` flag. It also removes
+        self-edges if requested.
+        """
+        G = nx.read_gexf(path)
+
+        # Ensure graph directedness matches the requested flag
+        if directed and not G.is_directed():
+            G = G.to_directed()
+        elif not directed and G.is_directed():
+            G = G.to_undirected()
+
+        # Remove self-edges if requested
+        if remove_self_edges:
+            self_edges = [(u, v) for u, v in G.edges() if u == v]
+            if self_edges:
+                G.remove_edges_from(self_edges)
+
+        return G
 
     def _load_tsv(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True, directed: bool = False) -> nx.Graph:
         """Load graph from TSV file."""
@@ -101,9 +127,31 @@ class GraphLoader:
                         try:
                             weight = float(attrs['interaction'])
                         except (ValueError, TypeError):
-                            weight = 1.0
+                            # Try other numeric attributes if 'interaction' couldn't be parsed
+                            weight = None
+                            for key in ('weight', 'score', 'value'):
+                                val = attrs.get(key)
+                                if val not in (None, ''):
+                                    try:
+                                        weight = float(val)
+                                        break
+                                    except (ValueError, TypeError):
+                                        weight = None
+                            if weight is None:
+                                weight = 1.0
                     else:
-                        weight = 1.0
+                        # No 'interaction' attribute; check common numeric fields before defaulting
+                        weight = None
+                        for key in ('weight', 'score', 'value'):
+                            val = attrs.get(key)
+                            if val not in (None, ''):
+                                try:
+                                    weight = float(val)
+                                    break
+                                except (ValueError, TypeError):
+                                    weight = None
+                        if weight is None:
+                            weight = 1.0
 
                     # Add edge with weight
                     G.add_edge(source_name, target_name, weight=weight, **attrs)

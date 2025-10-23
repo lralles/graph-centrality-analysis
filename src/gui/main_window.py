@@ -163,9 +163,10 @@ class GraphAnalysisGUI(tk.Tk):
         path = filedialog.askopenfilename(
             title="Select graph file",
             filetypes=[
-                ("Graph files", "*.tsv *.cys"),
+                ("Graph files", "*.tsv *.cys *.gexf"),
                 ("TSV files", "*.tsv"),
                 ("Cytoscape files", "*.cys"),
+                ("GEXF files", "*.gexf"),
                 ("All files", "*.*")
             ]
         )
@@ -178,16 +179,17 @@ class GraphAnalysisGUI(tk.Tk):
             _, ext = os.path.splitext(path)
             ext = ext.lower()
 
-            if ext == ".tsv" or ext == ".cys":
+            if ext == ".tsv" or ext == ".cys" or ext == ".gexf":
                 self._handle_file_upload(path)
             else:
                 self.status.set_status("Selected file type not recognized for column extraction")
 
     def _handle_file_upload(self, path):
         """
-        Handles input of TSV or CYS files
+        Handles input of TSV, CYS, or GEXF files
         for TSV: gets columns names and allows user to configure graph on UI
         for CYS: reads graph from file and loads preview, disables column selections
+        for GEXF: reads graph from file and loads preview, disables column selections
         """
         try:
             file_ext = os.path.splitext(path)[1].lower()
@@ -206,6 +208,18 @@ class GraphAnalysisGUI(tk.Tk):
                 else:
                     self.toolbar.hide_network_selector()
                     self.status.set_status("Loaded .cys file")
+
+                # avoid unbind bugs (method called while constructor is executing)
+                if hasattr(self, '_controller'):
+                    self.after(100, self._controller.generate_preview)
+            elif file_ext == '.gexf':
+                # GEXF files don't need column selection or network selection
+                self.toolbar.update_column_suggestions([])
+                self.toolbar.disable_column_selection()
+                self.toolbar.hide_tsv_options()  # Hide TSV-specific options for GEXF files
+                self.toolbar.hide_network_selector()  # Hide network selector for GEXF files
+
+                self.status.set_status("Loaded GEXF file")
 
                 # avoid unbind bugs (method called while constructor is executing)
                 if hasattr(self, '_controller'):

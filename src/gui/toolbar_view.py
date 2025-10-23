@@ -68,7 +68,7 @@ class ToolbarView(ttk.Frame):
         self.file_selection_frame.grid(row=1, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=4)
         self.file_selection_frame.columnconfigure(1, weight=1)
 
-        ttk.Label(self.file_selection_frame, text="Graph file (TSV or CYS)").grid(row=0, column=0, sticky=tk.W, padx=(0, 4))
+        ttk.Label(self.file_selection_frame, text="Graph file (TSV, CYS, or GEXF)").grid(row=0, column=0, sticky=tk.W, padx=(0, 4))
         self.file_var = tk.StringVar()
         self.file_entry = ttk.Entry(self.file_selection_frame, textvariable=self.file_var, style="Tall.TEntry")
         self.file_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 4))
