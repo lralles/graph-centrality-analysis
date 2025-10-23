@@ -108,6 +108,7 @@ class GraphAnalysisGUI(tk.Tk):
         self.toolbar = ToolbarView(self, list(centrality_functions.keys()))
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.toolbar.browse_button.configure(command=self._browse_file)
+        self.toolbar.generate_button.configure(command=self._generate_random_graph)
         self.toolbar.run_button.configure(command=self._on_run)
         self.toolbar.refresh_plot_button.configure(command=self._on_refresh_plot)
         self.toolbar.save_button.configure(command=self._on_save_as)
@@ -224,6 +225,52 @@ class GraphAnalysisGUI(tk.Tk):
         """Called when a column is selected - trigger preview generation"""
         if hasattr(self, '_controller'):
             self._controller.generate_preview()
+
+    def _generate_random_graph(self):
+        """Generate a random graph based on current parameters"""
+        try:
+            params = self.toolbar.get_random_graph_params()
+            self.status.set_status(f"Generating {params['graph_type']} graph with {params['size']} nodes...")
+
+            # Import the random graph generator
+            from src.models.random_graph_generator import make_graph, get_graph_type_display_names
+
+            # Generate the graph with a new seed each time to ensure different layouts
+            import time
+            seed = int(time.time() * 1000) % 10000  # Use current time as seed
+            graph = make_graph(params['graph_type'], params['size'], seed=seed)
+
+            # Clear any existing layout cache to force new positions
+            if hasattr(self, '_controller') and hasattr(self._controller, 'layout_cache'):
+                self._controller.layout_cache.clear()
+
+            # Store the graph in the controller for preview generation
+            if hasattr(self, '_controller'):
+                self._controller.set_random_graph(graph)
+                # Force a complete refresh by clearing the plot first
+                self.plot.clear()
+                self._controller.generate_preview()
+
+            display_names = get_graph_type_display_names()
+            display_name = display_names.get(params['graph_type'], params['graph_type'])
+            self.status.set_status(f"Generated {display_name} graph with {params['size']} nodes")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate random graph:\n{str(e)}")
+            self.status.set_status("Error generating graph")
+
+            display_names = get_graph_type_display_names()
+            display_name = display_names.get(params['graph_type'], params['graph_type'])
+            self.status.set_status(f"Generated {display_name} graph with {params['size']} nodes")
+
+            messagebox.showerror("Error", f"Failed to generate random graph:\n{str(e)}")
+            self.status.set_status("Error generating graph")
+
+    def _on_run(self):
+        thread = threading.Thread(target=self._run_analysis_safe)
+        thread.daemon = True
+        messagebox.showerror("Error", f"Failed to generate random graph:\n{str(e)}")
+        self.status.set_status("Error generating graph")
 
     def _on_run(self):
         thread = threading.Thread(target=self._run_analysis_safe)

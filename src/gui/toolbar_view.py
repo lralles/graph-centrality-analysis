@@ -47,17 +47,59 @@ class ToolbarView(ttk.Frame):
         self.content_frame = ttk.Frame(self)
         self.content_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        # File selection section
+        # File selection / Random graph generation section
         file_frame = ttk.Frame(self.content_frame)
         file_frame.grid(row=0, column=0, columnspan=4, sticky=(tk.W, tk.E), padx=4, pady=4)
         file_frame.columnconfigure(1, weight=1)  # Make the entry expand
 
-        ttk.Label(file_frame, text="Graph file (TSV or CYS)").grid(row=0, column=0, sticky=tk.W, padx=(0, 4))
+        # Graph source selection (File or Random)
+        source_frame = ttk.Frame(file_frame)
+        source_frame.grid(row=0, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 4))
+
+        ttk.Label(source_frame, text="Graph source:").grid(row=0, column=0, sticky=tk.W, padx=(0, 4))
+        self.graph_source_var = tk.StringVar(value="file")
+        self.graph_source_combo = ttk.Combobox(source_frame, textvariable=self.graph_source_var,
+                                             values=["file", "random"], state="readonly", width=15)
+        self.graph_source_combo.grid(row=0, column=1, sticky=tk.W, padx=(0, 4))
+        self.graph_source_combo.bind('<<ComboboxSelected>>', self._on_graph_source_changed)
+
+        # File selection (shown when source is "file")
+        self.file_selection_frame = ttk.Frame(file_frame)
+        self.file_selection_frame.grid(row=1, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=4)
+        self.file_selection_frame.columnconfigure(1, weight=1)
+
+        ttk.Label(self.file_selection_frame, text="Graph file (TSV or CYS)").grid(row=0, column=0, sticky=tk.W, padx=(0, 4))
         self.file_var = tk.StringVar()
-        self.file_entry = ttk.Entry(file_frame, textvariable=self.file_var, style="Tall.TEntry")
+        self.file_entry = ttk.Entry(self.file_selection_frame, textvariable=self.file_var, style="Tall.TEntry")
         self.file_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 4))
-        self.browse_button = ttk.Button(file_frame, text="Browse", style="Tall.TButton")
+        self.browse_button = ttk.Button(self.file_selection_frame, text="Browse", style="Tall.TButton")
         self.browse_button.grid(row=0, column=2, sticky=tk.E)
+
+        # Random graph selection (hidden initially)
+        self.random_graph_frame = ttk.Frame(file_frame)
+        self.random_graph_frame.grid(row=1, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=4)
+        self.random_graph_frame.columnconfigure(1, weight=1)
+        self.random_graph_frame.columnconfigure(3, weight=1)
+
+        ttk.Label(self.random_graph_frame, text="Graph type:").grid(row=0, column=0, sticky=tk.W, padx=(0, 4))
+        self.random_graph_type_var = tk.StringVar(value="erdos_renyi")
+        self.random_graph_type_combo = ttk.Combobox(self.random_graph_frame, textvariable=self.random_graph_type_var,
+                                                   values=["erdos_renyi", "barabasi_albert", "watts_strogatz"],
+                                                   state="readonly", width=18)
+        self.random_graph_type_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 8))
+        self.random_graph_type_combo.bind('<<ComboboxSelected>>', self._on_random_graph_changed)
+
+        ttk.Label(self.random_graph_frame, text="Size (nodes):").grid(row=0, column=2, sticky=tk.W, padx=(0, 4))
+        self.random_graph_size_var = tk.StringVar(value="50")
+        self.random_graph_size_entry = ttk.Entry(self.random_graph_frame, textvariable=self.random_graph_size_var, width=10)
+        self.random_graph_size_entry.grid(row=0, column=3, sticky=(tk.W, tk.E))
+        self.random_graph_size_entry.bind('<KeyRelease>', self._on_random_graph_changed)
+
+        self.generate_button = ttk.Button(self.random_graph_frame, text="Generate", style="Tall.TButton")
+        self.generate_button.grid(row=0, column=4, sticky=tk.E, padx=(8, 0))
+
+        # Initially hide random graph options
+        self.random_graph_frame.grid_remove()
 
         # Network selection section (for .cys files)
         self.network_label = ttk.Label(self.content_frame, text="Network")
@@ -274,42 +316,91 @@ class ToolbarView(ttk.Frame):
         """Update the network list in the network selector"""
         self.network_combo['values'] = networks
         if networks:
-            # Select first network by default and ensure the selector is visible
-            try:
-                self.network_combo.current(0)
-            except Exception:
-                # Ignore if setting current fails for some reason
-                pass
-            self.network_label.grid()
-            self.network_combo.grid()
+            self.network_combo.set(networks[0])
+            self.show_network_selector()  # Show the network selector when networks are available
         else:
-            self.network_label.grid_remove()
-            self.network_combo.grid_remove()
-            self.network_var.set("")
-
-    def hide_network_selector(self):
-        """Hide the network selector (for non-.cys files)"""
-    def hide_network_selector(self):
-        """Hide the network selector (for non-.cys files)"""
-        self.network_label.grid_remove()
-        self.network_combo.grid_remove()
-        self.network_var.set("")
+            self.hide_network_selector()  # Hide if no networks available
 
     def show_network_selector(self):
-        """Show the network selector (for .cys files)"""
+        """Show the network selector for .cys files"""
         self.network_label.grid()
         self.network_combo.grid()
 
+    def hide_network_selector(self):
+        """Hide the network selector"""
+        self.network_label.grid_remove()
+        self.network_combo.grid_remove()
+
     def show_tsv_options(self):
-        """Show TSV-specific options (column selection, self-edges, directed graph)"""
+        """Show TSV-specific options"""
         self.tsv_options_frame.grid()
 
     def hide_tsv_options(self):
-        """Hide TSV-specific options (column selection, self-edges, directed graph)"""
+        """Hide TSV-specific options"""
         self.tsv_options_frame.grid_remove()
 
+    def _on_graph_source_changed(self, _event=None):
+        """Handle graph source selection change"""
+        source = self.graph_source_var.get()
+        if source == "file":
+            self.file_selection_frame.grid()
+            self.random_graph_frame.grid_remove()
+        else:  # random
+            self.file_selection_frame.grid_remove()
+            self.random_graph_frame.grid()
+            # Hide file-specific options when switching to random
+            self.hide_network_selector()
+            self.hide_tsv_options()
+
+        # Trigger callback if set
+        if getattr(self, "on_column_selected_callback", None):
+            self.on_column_selected_callback()
+
+    def _on_random_graph_changed(self, _event=None):
+        """Handle random graph parameter changes"""
+        # Clear any existing layout cache when parameters change
+        if hasattr(self, 'master') and hasattr(self.master, '_controller'):
+            controller = getattr(self.master, '_controller', None)
+            if controller is not None and hasattr(controller, 'layout_cache'):
+                try:
+                    controller.layout_cache.clear()
+                    # Trigger callback if set
+                    if getattr(self, "on_column_selected_callback", None):
+                        self.on_column_selected_callback()
+                except Exception:
+                    # If layout_cache does not support clear(), try to reset it
+                    try:
+                        controller.layout_cache = {}
+                    except Exception:
+                        pass
+
+        if getattr(self, "on_column_selected_callback", None):
+            self.on_column_selected_callback()
+
+    def is_random_graph_mode(self):
+        """Check if currently in random graph mode"""
+        return self.graph_source_var.get() == "random"
+
+    def get_random_graph_params(self):
+        """Get random graph generation parameters"""
+        try:
+            size = int(self.random_graph_size_var.get())
+            if size <= 0:
+                raise ValueError("Size must be positive")
+        except Exception:
+            size = 50  # default
+            try:
+                self.random_graph_size_var.set("50")
+            except Exception:
+                pass
+
+        return {
+            'graph_type': self.random_graph_type_var.get(),
+            'size': size
+        }
+
     def get_selected_network(self):
-        """Get the currently selected network name"""
-        return self.network_var.get()
+        """Get the selected network name for .cys files"""
+        return self.network_var.get() if hasattr(self, 'network_var') else None
 
 

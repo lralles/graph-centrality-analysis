@@ -9,11 +9,57 @@ class GraphAnalysisController:
         self.analysis = analysis
         self.layout_cache = layout_cache
         self.renderer = renderer
+        self.random_graph = None  # Store random graph when generated
+    def set_random_graph(self, graph):
+        """Set a random graph for analysis"""
+        self.random_graph = graph
 
     def generate_preview(self) -> None:
         """
         Generates the graph preview if the graph can be loaded
         """
+        # Check if we're in random graph mode
+        if self.app.toolbar.is_random_graph_mode():
+            if self.random_graph is None:
+                return
+
+            try:
+                self.app.status.set_status("Loading preview...")
+                G = self.random_graph
+
+                # uses the same visualization engine as the impact, but with different options
+                preview_result = {
+                    "label": "Graph Preview",
+                    "gtype": "Preview",
+                    "impact": {},           # Empty impact for preview
+                    "graph": G,
+                    "removed_nodes": [],    # No removed nodes in preview
+                }
+
+                preview_options = {
+                    "show_node_names": True,
+                    "edge_thickness_by_weight": True,
+                    "mark_removed_edges": False,
+                }
+
+                self.renderer.render(self.app.plot.figure, preview_result, preview_options)
+                self.app.plot.canvas.draw()
+
+                self.app.status.set_status(f"Preview loaded: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+
+                # Populate the node selector with available nodes
+                nodes = sorted(G.nodes())
+                self.app.toolbar.update_node_list(nodes)
+
+                # Populate the adjacency list and show it
+                self.app.adjacency_list.populate(G)
+                self.app._show_adjacency_list()
+
+            except Exception as e:
+                self.app.status.set_status(f"Preview failed: {str(e)}")
+            return
+
+        # Original file-based preview logic
         file_path = self.app.toolbar.file_var.get().strip()
         if not file_path:
             return
@@ -72,39 +118,71 @@ class GraphAnalysisController:
         Populates the table
         Plots the result in the graph view
         """
-        file_path = self.app.toolbar.file_var.get().strip()
-        edge1 = self.app.toolbar.edge1_var.get().strip() or "edge1"
-        edge2 = self.app.toolbar.edge2_var.get().strip() or "edge2"
-        weight = self.app.toolbar.weight_var.get().strip() or "weight"
-        removed_nodes = self.app.toolbar.get_selected_nodes()
+        # Get the selected nodes from the toolbar (these may be strings)
+        removed_nodes_str = self.app.toolbar.get_selected_nodes()
         selected_centralities = [k for k, v in self.app.toolbar.centrality_vars.items() if v.get()]
-        remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
-        directed = self.app.toolbar.directed_graph_var.get()
-        network_name = self.app.toolbar.get_selected_network()
 
-        if not file_path:
-            raise ValueError("Please select a graph file")
-        if not removed_nodes:
+        if not removed_nodes_str:
             raise ValueError("Please select at least one node to remove")
         if not selected_centralities:
             raise ValueError("Please select at least one centrality measure")
 
-        G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name, directed)
+        # Handle random graph mode
+        if self.app.toolbar.is_random_graph_mode():
+            if self.random_graph is None:
+                raise ValueError("Please generate a random graph first")
+
+            G = self.random_graph
+
+            # Convert string node IDs back to the original type (int for random graphs)
+            removed_nodes = []
+            for node_str in removed_nodes_str:
+                try:
+                    # Try to convert to int first (for random graphs)
+                    removed_nodes.append(int(node_str))
+                except ValueError:
+                    # If conversion fails, keep as string
+                    removed_nodes.append(node_str)
+
+            params = self.app.toolbar.get_random_graph_params()
+            from src.models.random_graph_generator import get_graph_type_display_names
+            display_names = get_graph_type_display_names()
+            graph_type_display = display_names.get(params['graph_type'], params['graph_type'])
+            file_type = f"Random {graph_type_display}"
+        else:
+            # Handle file-based mode
+            file_path = self.app.toolbar.file_var.get().strip()
+            edge1 = self.app.toolbar.edge1_var.get().strip() or "edge1"
+            edge2 = self.app.toolbar.edge2_var.get().strip() or "edge2"
+            weight = self.app.toolbar.weight_var.get().strip() or "weight"
+            remove_self_edges = self.app.toolbar.remove_self_edges_var.get()
+            directed = self.app.toolbar.directed_graph_var.get()
+            network_name = self.app.toolbar.get_selected_network()
+
+            if not file_path:
+                raise ValueError("Please select a graph file")
+
+            G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name, directed)
+
+            # For file-based graphs, keep nodes as strings (they're usually strings anyway)
+            removed_nodes = removed_nodes_str
+
+            file_ext = path.splitext(file_path)[1].lower()
+            file_type = "CYS" if file_ext == '.cys' else "TSV"
+            file_type = f"Read from {file_type}"
+
         df, impact = self.analysis.compute(G, removed_nodes, selected_centralities)
 
         # Switch to analysis table view and populate it
         self.app._show_analysis_table()
         self.app.table.populate(df)
 
-        file_ext = path.splitext(file_path)[1].lower()
-        file_type = "CYS" if file_ext == '.cys' else "TSV"
-
         # Create a readable list of removed nodes
         removed_nodes_str = ", ".join(str(node) for node in removed_nodes)
 
         result = {
             "label": f"Removed Nodes: {removed_nodes_str}",
-            "gtype": f"Read from {file_type}",
+            "gtype": file_type,
             "impact": impact,
             "graph": G,
             "removed_nodes": removed_nodes,

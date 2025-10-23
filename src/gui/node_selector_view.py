@@ -37,9 +37,10 @@ class NodeSelectorView(ttk.Frame):
         # Store all nodes for filtering
         self._all_nodes = []
 
-    def set_nodes(self, nodes: list[str]):
+    def set_nodes(self, nodes: list):
         """Set the available nodes in the listbox"""
-        self._all_nodes = sorted(nodes)
+        # Convert all nodes to strings to handle both string and integer node IDs
+        self._all_nodes = sorted([str(node) for node in nodes])
         self._update_listbox()
 
     def get_selected_nodes(self) -> list[str]:
@@ -47,11 +48,13 @@ class NodeSelectorView(ttk.Frame):
         selected_indices = self.listbox.curselection()
         return [self.listbox.get(i) for i in selected_indices]
 
-    def set_selected_nodes(self, nodes: list[str]):
+    def set_selected_nodes(self, nodes: list):
         """Set which nodes should be selected"""
+        # Convert nodes to strings for comparison
+        nodes_str = [str(node) for node in nodes]
         self.listbox.selection_clear(0, tk.END)
         for i in range(self.listbox.size()):
-            if self.listbox.get(i) in nodes:
+            if self.listbox.get(i) in nodes_str:
                 self.listbox.selection_set(i)
 
     def _update_listbox(self):
@@ -63,7 +66,7 @@ class NodeSelectorView(ttk.Frame):
         self.listbox.delete(0, tk.END)
 
         search_term = self.search_var.get().lower()
-        filtered_nodes = [n for n in self._all_nodes if search_term in n.lower()]
+        filtered_nodes = [n for n in self._all_nodes if search_term in str(n).lower()]
 
         for node in filtered_nodes:
             self.listbox.insert(tk.END, node)

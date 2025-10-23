@@ -11,4 +11,8 @@ class LayoutCache:
     def set(self, key, value) -> None:
         self._cache[key] = value
 
+    def clear(self) -> None:
+        """Clear all cached layouts"""
+        self._cache.clear()
+
 

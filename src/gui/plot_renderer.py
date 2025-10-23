@@ -65,8 +65,11 @@ class PlotRenderer:
         # Get layout type from plot options
         layout_type = plot_options.get("layout_type", "Spring")
 
-        # Create cache key that includes layout type
-        key = (result["gtype"], size, layout_type)
+        # Create cache key that includes layout type and graph structure
+        # Use a hash of the graph structure to ensure different graphs get different layouts
+        graph_hash = hash(tuple(sorted(G.edges())))
+        key = (result["gtype"], size, layout_type, graph_hash)
+
         pos = self.layout_cache.get(key)
         if pos is None:
             pos = self._calculate_layout(G, layout_type, size)
