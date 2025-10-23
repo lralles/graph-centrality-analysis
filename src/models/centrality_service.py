@@ -95,13 +95,12 @@ def calculate_diameter(G):
 
     if G.number_of_nodes() == 1:
         return 0
-
-    # For connected graphs, calculate diameter
-    if nx.is_connected(G):
+    
+    try:
         return nx.diameter(G)
-    else:
-        # For disconnected graphs, return infinity
+    except nx.NetworkXError:
         return float('inf')
+
 
 
 centrality_functions = {
