@@ -177,6 +177,16 @@ class GraphAnalysisController:
             # For file-based graphs, keep nodes as strings (they're usually strings anyway)
             removed_nodes = removed_nodes_str
 
+            # Set file_type based on file extension
+            file_ext = path.splitext(file_path)[1].lower()
+            if file_ext == '.cys':
+                if network_name:
+                    file_type = f"CYS file (network: {network_name})"
+                else:
+                    file_type = "CYS file"
+            else:
+                file_type = f"{file_ext.upper()} file"
+
         # Apply graph processing options to both random and file-based graphs
         remove_zero_degree = self.app.toolbar.remove_zero_degree_var.get()
         use_largest_component = self.app.toolbar.use_largest_component_var.get()

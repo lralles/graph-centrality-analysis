@@ -117,37 +117,38 @@ class ToolbarView(ttk.Frame):
         self.tsv_options_frame.grid(row=2, column=0, columnspan=4, sticky=(tk.W, tk.E), padx=4, pady=4)
         self.tsv_options_frame.columnconfigure(1, weight=1)
         self.tsv_options_frame.columnconfigure(3, weight=1)
+        self.tsv_options_frame.columnconfigure(5, weight=1)
 
-        # Column selection section (TSV-specific)
+        # Column selection section (TSV-specific) - all in one row
         ttk.Label(self.tsv_options_frame, text="Source Node Column").grid(row=0, column=0, sticky=tk.W, padx=(0, 4), pady=4)
         self.edge1_var = tk.StringVar()
-        self.edge1_combo = ttk.Combobox(self.tsv_options_frame, textvariable=self.edge1_var, width=18, style="Tall.TCombobox", state="readonly")
+        self.edge1_combo = ttk.Combobox(self.tsv_options_frame, textvariable=self.edge1_var, width=12, style="Tall.TCombobox", state="readonly")
         self.edge1_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 8), pady=4)
         self.edge1_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
         ttk.Label(self.tsv_options_frame, text="Destination Node Column").grid(row=0, column=2, sticky=tk.W, padx=(0, 4), pady=4)
         self.edge2_var = tk.StringVar()
-        self.edge2_combo = ttk.Combobox(self.tsv_options_frame, textvariable=self.edge2_var, width=18, style="Tall.TCombobox", state="readonly")
-        self.edge2_combo.grid(row=0, column=3, sticky=(tk.W, tk.E), padx=0, pady=4)
+        self.edge2_combo = ttk.Combobox(self.tsv_options_frame, textvariable=self.edge2_var, width=12, style="Tall.TCombobox", state="readonly")
+        self.edge2_combo.grid(row=0, column=3, sticky=(tk.W, tk.E), padx=(0, 8), pady=4)
         self.edge2_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
-        ttk.Label(self.tsv_options_frame, text="Weight Column").grid(row=1, column=0, sticky=tk.W, padx=(0, 4), pady=4)
+        ttk.Label(self.tsv_options_frame, text="Weight Column").grid(row=0, column=4, sticky=tk.W, padx=(0, 4), pady=4)
         self.weight_var = tk.StringVar()
-        self.weight_combo = ttk.Combobox(self.tsv_options_frame, textvariable=self.weight_var, width=18, style="Tall.TCombobox", state="readonly")
-        self.weight_combo.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(0, 8), pady=4)
+        self.weight_combo = ttk.Combobox(self.tsv_options_frame, textvariable=self.weight_var, width=12, style="Tall.TCombobox", state="readonly")
+        self.weight_combo.grid(row=0, column=5, sticky=(tk.W, tk.E), padx=(0, 8), pady=4)
         self.weight_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
 
-        # Self-edges removal option and directed/undirected toggle (TSV-specific)
+        # Self-edges removal option and directed/undirected toggle (TSV-specific) - in same row
         self.remove_self_edges_var = tk.BooleanVar(value=True)
         self.directed_graph_var = tk.BooleanVar(value=False)
 
         self.remove_self_edges_cb = ttk.Checkbutton(
             self.tsv_options_frame,
-            text="Remove self-edges (loops)",
+            text="Remove self-edges",
             variable=self.remove_self_edges_var,
             command=self._on_column_selected
         )
-        self.remove_self_edges_cb.grid(row=1, column=2, sticky=tk.W, padx=(0, 4), pady=4)
+        self.remove_self_edges_cb.grid(row=0, column=6, sticky=tk.W, padx=(8, 4), pady=4)
 
         self.directed_graph_cb = ttk.Checkbutton(
             self.tsv_options_frame,
@@ -155,15 +156,15 @@ class ToolbarView(ttk.Frame):
             variable=self.directed_graph_var,
             command=self._on_column_selected
         )
-        self.directed_graph_cb.grid(row=1, column=3, sticky=tk.W, padx=0, pady=4)
+        self.directed_graph_cb.grid(row=0, column=7, sticky=tk.W, padx=(4, 0), pady=4)
 
         # Initially hide TSV-specific options
         self.tsv_options_frame.grid_remove()
 
-        # Graph processing options (visible for all graph types)
-        ttk.Label(self.content_frame, text="Graph processing").grid(row=2, column=0, sticky=tk.NW, padx=4, pady=4)
+        # Graph processing options (visible for all graph types) - moved to row 3
+        ttk.Label(self.content_frame, text="Graph processing").grid(row=3, column=0, sticky=tk.NW, padx=4, pady=4)
         graph_processing_frame = ttk.Frame(self.content_frame)
-        graph_processing_frame.grid(row=2, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
+        graph_processing_frame.grid(row=3, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
 
         # Remove zero degree nodes option
         self.remove_zero_degree_var = tk.BooleanVar(value=False)
@@ -184,13 +185,12 @@ class ToolbarView(ttk.Frame):
             command=self._on_graph_processing_changed
         )
         self.use_largest_component_cb.grid(row=0, column=1, sticky=tk.W, padx=0, pady=2)
-
-        # Node selector with multi-select
+        # Node selector with multi-select - moved to row 4
         ttk.Label(self.content_frame, text="Nodes to remove").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
         self.node_selector = NodeSelectorView(self.content_frame)
         self.node_selector.grid(row=4, column=1, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=4, pady=4)
 
-        # Centrality measures - use full horizontal space
+        # Centrality measures - use full horizontal space - moved to row 5
         ttk.Label(self.content_frame, text="Centrality measures").grid(row=5, column=0, sticky=tk.NW, padx=4, pady=4)
         self.centrality_vars = {}
         centralities_frame = ttk.Frame(self.content_frame)
@@ -219,7 +219,7 @@ class ToolbarView(ttk.Frame):
             cb.grid(row=row, column=col, padx=4, pady=2, sticky=tk.W)
             self.centrality_vars[key] = var
 
-        # Plot options
+        # Plot options - moved to row 6
         ttk.Label(self.content_frame, text="Plot options").grid(row=6, column=0, sticky=tk.NW, padx=4, pady=4)
         plot_options_frame = ttk.Frame(self.content_frame)
         plot_options_frame.grid(row=6, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
@@ -247,7 +247,7 @@ class ToolbarView(ttk.Frame):
         self.mark_removed_edges_cb = ttk.Checkbutton(plot_options_frame, text="Mark removed edges", variable=self.mark_removed_edges_var)
         self.mark_removed_edges_cb.grid(row=1, column=2, padx=4, pady=2, sticky=tk.W)
 
-        # Action buttons
+        # Action buttons - moved to row 7
         actions_frame = ttk.Frame(self.content_frame)
         actions_frame.grid(row=7, column=0, columnspan=4, sticky=(tk.W, tk.E), padx=0, pady=(6, 0))
         self.run_button = ttk.Button(actions_frame, text="Run Analysis")
@@ -263,6 +263,7 @@ class ToolbarView(ttk.Frame):
         self.content_frame.columnconfigure(1, weight=1)
         self.content_frame.columnconfigure(2, weight=1)
         self.content_frame.columnconfigure(3, weight=1)
+        self.content_frame.rowconfigure(4, weight=1)
         self.content_frame.rowconfigure(4, weight=1)
 
     def _toggle_collapse(self):
