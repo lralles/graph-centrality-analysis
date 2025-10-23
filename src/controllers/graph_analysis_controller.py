@@ -171,11 +171,22 @@ class GraphAnalysisController:
             file_type = "CYS" if file_ext == '.cys' else "TSV"
             file_type = f"Read from {file_type}"
 
-        df, impact = self.analysis.compute(G, removed_nodes, selected_centralities)
+        df, impact, diameter_info = self.analysis.compute(G, removed_nodes, selected_centralities)
 
         # Switch to analysis table view and populate it
         self.app._show_analysis_table()
         self.app.table.populate(df)
+
+        # Update diameter display if available
+        try:
+            if isinstance(diameter_info, dict):
+                before = diameter_info.get('before')
+                after = diameter_info.get('after')
+                if before is not None and after is not None:
+                    self.app.table.update_diameter_display(before, after)
+        except Exception:
+            # Don't let diameter display issues break the analysis flow
+            pass
 
         # Create a readable list of removed nodes
         removed_nodes_str = ", ".join(str(node) for node in removed_nodes)

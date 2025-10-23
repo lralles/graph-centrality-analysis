@@ -10,7 +10,11 @@ class TableView(ttk.Frame):
         # Create a frame for the export button
         button_frame = ttk.Frame(self)
         button_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
-        
+
+        # Create diameter info label (left side)
+        self.diameter_label = ttk.Label(button_frame, text="", font=('TkDefaultFont', 9))
+        self.diameter_label.pack(side=tk.LEFT)
+
         self.export_button = ttk.Button(button_frame, text="Export as CSV", command=self._export_csv)
         self.export_button.pack(side=tk.RIGHT)
         
@@ -126,6 +130,7 @@ class TableView(ttk.Frame):
         for item in self.tree.get_children():
             self.tree.delete(item)
         self.current_data = None
+        self.clear_diameter_display()
 
     def populate(self, df: pd.DataFrame):
         """Populate the treeview with data from DataFrame"""
@@ -159,6 +164,24 @@ class TableView(ttk.Frame):
                     values.append(f"{val:.6f}")
                 else:
                     values.append(str(val))
-            
+
             tag = 'oddrow' if idx % 2 else 'evenrow'
             self.tree.insert("", tk.END, text=str(node), values=values, tags=(tag,))
+
+    def update_diameter_display(self, diameter_before, diameter_after):
+        """Update the diameter display label"""
+        if diameter_before == float('inf'):
+            before_text = "∞"
+        else:
+            before_text = f"{diameter_before:.0f}"
+
+        if diameter_after == float('inf'):
+            after_text = "∞"
+        else:
+            after_text = f"{diameter_after:.0f}"
+
+        self.diameter_label.config(text=f"Diameter Before: {before_text}; Diameter After: {after_text}")
+
+    def clear_diameter_display(self):
+        """Clear the diameter display"""
+        self.diameter_label.config(text="")

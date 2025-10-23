@@ -74,6 +74,36 @@ def unnormalized_degree_centrality(G):
     return dict(G.degree())
 
 
+
+def calculate_diameter(G):
+    """
+    Calculate the diameter of a graph (longest shortest path between any two nodes).
+    Returns infinity if the graph is disconnected.
+
+    Parameters
+    ----------
+    G : NetworkX graph
+        A NetworkX graph
+
+    Returns
+    -------
+    float
+        The diameter of the graph, or float('inf') if disconnected
+    """
+    if G.number_of_nodes() == 0:
+        return 0
+
+    if G.number_of_nodes() == 1:
+        return 0
+
+    # For connected graphs, calculate diameter
+    if nx.is_connected(G):
+        return nx.diameter(G)
+    else:
+        # For disconnected graphs, return infinity
+        return float('inf')
+
+
 centrality_functions = {
     "degree": nx.degree_centrality,
     "unnormalized_degree": unnormalized_degree_centrality,
@@ -85,7 +115,23 @@ centrality_functions = {
 
 
 class CentralityAnalysisService:
-    def compute(self, G: nx.Graph, removed_nodes, selected_centralities) -> tuple[pd.DataFrame, dict[Any, float]]:
+    def compute(self, G: nx.Graph, removed_nodes, selected_centralities) -> tuple[pd.DataFrame, dict[Any, float], dict[str, float]]:
+        # Calculate diameter before node removal
+        diameter_before = calculate_diameter(G)
+
+        # Create a copy of the graph for diameter calculation after removal
+        temp_graph = G.copy()
+        for node in removed_nodes:
+            temp_graph.remove_node(node)
+
+        # Calculate diameter after node removal
+        diameter_after = calculate_diameter(temp_graph)
+
+        diameter_info = {
+            'before': diameter_before,
+            'after': diameter_after
+        }
+
         overall_centrality_delta = {}
         centrality_results = {}  # Store individual centrality results
 
@@ -130,6 +176,6 @@ class CentralityAnalysisService:
             centrality_table[node] = row_data
 
         df = pd.DataFrame.from_dict(centrality_table, orient="index")
-        return df, overall_centrality_delta
+        return df, overall_centrality_delta, diameter_info
 
 
