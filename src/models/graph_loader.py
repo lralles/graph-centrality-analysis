@@ -132,3 +132,73 @@ class GraphLoader:
             return []
 
 
+    def process_graph(self, G: nx.Graph, remove_zero_degree: bool = False, use_largest_component: bool = False) -> nx.Graph:
+        """
+        Apply graph processing operations.
+
+        Args:
+            G: Input graph
+            remove_zero_degree: Whether to remove nodes with degree 0
+            use_largest_component: Whether to keep only the largest connected component
+
+        Returns:
+            Processed graph
+        """
+        # Create a copy to avoid modifying the original
+        processed_G = G.copy()
+
+        # Remove zero degree nodes
+        if remove_zero_degree:
+            processed_G = self._remove_zero_degree_nodes(processed_G)
+
+        # Use only largest component
+        if use_largest_component:
+            processed_G = self._extract_largest_component(processed_G)
+
+        return processed_G
+
+    def _remove_zero_degree_nodes(self, G: nx.Graph) -> nx.Graph:
+        """
+        Remove all nodes with degree 0 from the graph.
+
+        Args:
+            G: Input graph
+
+        Returns:
+            Graph with zero degree nodes removed
+        """
+        # Find nodes with degree 0
+        zero_degree_nodes = [node for node, degree in G.degree() if degree == 0]
+
+        # Remove them from the graph
+        G.remove_nodes_from(zero_degree_nodes)
+
+        return G
+
+    def _extract_largest_component(self, G: nx.Graph) -> nx.Graph:
+        """
+        Extract the largest connected component from the graph.
+
+        Args:
+            G: Input graph
+
+        Returns:
+            Subgraph containing only the largest connected component
+        """
+        if G.is_directed():
+            # For directed graphs, use weakly connected components
+            components = list(nx.weakly_connected_components(G))
+        else:
+            # For undirected graphs, use connected components
+            components = list(nx.connected_components(G))
+
+        if not components:
+            return G
+
+        # Find the largest component
+        largest_component = max(components, key=len)
+
+        # Return subgraph with only the largest component
+        return G.subgraph(largest_component).copy()
+
+

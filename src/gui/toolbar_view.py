@@ -160,16 +160,41 @@ class ToolbarView(ttk.Frame):
         # Initially hide TSV-specific options
         self.tsv_options_frame.grid_remove()
 
+        # Graph processing options (visible for all graph types)
+        ttk.Label(self.content_frame, text="Graph processing").grid(row=2, column=0, sticky=tk.NW, padx=4, pady=4)
+        graph_processing_frame = ttk.Frame(self.content_frame)
+        graph_processing_frame.grid(row=2, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
+
+        # Remove zero degree nodes option
+        self.remove_zero_degree_var = tk.BooleanVar(value=False)
+        self.remove_zero_degree_cb = ttk.Checkbutton(
+            graph_processing_frame,
+            text="Remove zero degree nodes",
+            variable=self.remove_zero_degree_var,
+            command=self._on_graph_processing_changed
+        )
+        self.remove_zero_degree_cb.grid(row=0, column=0, sticky=tk.W, padx=(0, 20), pady=2)
+
+        # Use only largest component option
+        self.use_largest_component_var = tk.BooleanVar(value=False)
+        self.use_largest_component_cb = ttk.Checkbutton(
+            graph_processing_frame,
+            text="Use only the largest component",
+            variable=self.use_largest_component_var,
+            command=self._on_graph_processing_changed
+        )
+        self.use_largest_component_cb.grid(row=0, column=1, sticky=tk.W, padx=0, pady=2)
+
         # Node selector with multi-select
-        ttk.Label(self.content_frame, text="Nodes to remove").grid(row=3, column=0, sticky=tk.NW, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Nodes to remove").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
         self.node_selector = NodeSelectorView(self.content_frame)
-        self.node_selector.grid(row=3, column=1, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=4, pady=4)
+        self.node_selector.grid(row=4, column=1, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=4, pady=4)
 
         # Centrality measures - use full horizontal space
-        ttk.Label(self.content_frame, text="Centrality measures").grid(row=4, column=0, sticky=tk.NW, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Centrality measures").grid(row=5, column=0, sticky=tk.NW, padx=4, pady=4)
         self.centrality_vars = {}
         centralities_frame = ttk.Frame(self.content_frame)
-        centralities_frame.grid(row=4, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
+        centralities_frame.grid(row=5, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
         centralities_frame.columnconfigure(0, weight=1)
         centralities_frame.columnconfigure(1, weight=1)
         centralities_frame.columnconfigure(2, weight=1)
@@ -195,9 +220,9 @@ class ToolbarView(ttk.Frame):
             self.centrality_vars[key] = var
 
         # Plot options
-        ttk.Label(self.content_frame, text="Plot options").grid(row=5, column=0, sticky=tk.NW, padx=4, pady=4)
+        ttk.Label(self.content_frame, text="Plot options").grid(row=6, column=0, sticky=tk.NW, padx=4, pady=4)
         plot_options_frame = ttk.Frame(self.content_frame)
-        plot_options_frame.grid(row=5, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
+        plot_options_frame.grid(row=6, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
 
         # Layout type selection
         layout_frame = ttk.Frame(plot_options_frame)
@@ -224,7 +249,7 @@ class ToolbarView(ttk.Frame):
 
         # Action buttons
         actions_frame = ttk.Frame(self.content_frame)
-        actions_frame.grid(row=6, column=0, columnspan=4, sticky=(tk.W, tk.E), padx=0, pady=(6, 0))
+        actions_frame.grid(row=7, column=0, columnspan=4, sticky=(tk.W, tk.E), padx=0, pady=(6, 0))
         self.run_button = ttk.Button(actions_frame, text="Run Analysis")
         self.run_button.pack(side=tk.LEFT, padx=(0, 6))
         self.refresh_plot_button = ttk.Button(actions_frame, text="Refresh Plot")
@@ -238,7 +263,7 @@ class ToolbarView(ttk.Frame):
         self.content_frame.columnconfigure(1, weight=1)
         self.content_frame.columnconfigure(2, weight=1)
         self.content_frame.columnconfigure(3, weight=1)
-        self.content_frame.rowconfigure(3, weight=1)
+        self.content_frame.rowconfigure(4, weight=1)
 
     def _toggle_collapse(self):
         """Toggle the collapsed state of the configuration section"""
@@ -283,6 +308,11 @@ class ToolbarView(ttk.Frame):
 
     def _on_column_selected(self, _event=None):
         """Handle column selection events"""
+        if self.on_column_selected_callback:
+            self.on_column_selected_callback()
+
+    def _on_graph_processing_changed(self, _event=None):
+        """Handle graph processing option changes"""
         if self.on_column_selected_callback:
             self.on_column_selected_callback()
 

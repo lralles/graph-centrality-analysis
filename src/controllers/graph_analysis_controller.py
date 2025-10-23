@@ -25,7 +25,12 @@ class GraphAnalysisController:
 
             try:
                 self.app.status.set_status("Loading preview...")
-                G = self.random_graph
+                G = self.random_graph.copy()  # Make a copy to avoid modifying the original
+
+                # Apply graph processing options
+                remove_zero_degree = self.app.toolbar.remove_zero_degree_var.get()
+                use_largest_component = self.app.toolbar.use_largest_component_var.get()
+                G = self.loader.process_graph(G, remove_zero_degree, use_largest_component)
 
                 # uses the same visualization engine as the impact, but with different options
                 preview_result = {
@@ -81,6 +86,11 @@ class GraphAnalysisController:
             self.app.status.set_status("Loading preview...")
             G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name, directed)
 
+            # Apply graph processing options
+            remove_zero_degree = self.app.toolbar.remove_zero_degree_var.get()
+            use_largest_component = self.app.toolbar.use_largest_component_var.get()
+            G = self.loader.process_graph(G, remove_zero_degree, use_largest_component)
+
             # uses the same visualization engine as the impact, but with different options
             preview_result = {
                 "label": "Graph Preview",
@@ -132,7 +142,7 @@ class GraphAnalysisController:
             if self.random_graph is None:
                 raise ValueError("Please generate a random graph first")
 
-            G = self.random_graph
+            G = self.random_graph.copy()  # Make a copy to avoid modifying the original
 
             # Convert string node IDs back to the original type (int for random graphs)
             removed_nodes = []
@@ -167,9 +177,11 @@ class GraphAnalysisController:
             # For file-based graphs, keep nodes as strings (they're usually strings anyway)
             removed_nodes = removed_nodes_str
 
-            file_ext = path.splitext(file_path)[1].lower()
-            file_type = "CYS" if file_ext == '.cys' else "TSV"
-            file_type = f"Read from {file_type}"
+        # Apply graph processing options to both random and file-based graphs
+        remove_zero_degree = self.app.toolbar.remove_zero_degree_var.get()
+        use_largest_component = self.app.toolbar.use_largest_component_var.get()
+        G = self.loader.process_graph(G, remove_zero_degree, use_largest_component)
+        file_type = f"Read from {file_type}"
 
         df, impact, diameter_info = self.analysis.compute(G, removed_nodes, selected_centralities)
 
