@@ -250,3 +250,57 @@ class GraphLoader:
         return G.subgraph(largest_component).copy()
 
 
+    def export_cys(self, graph: nx.Graph, output_path: str, network_name: str = "network",
+                   combined_centrality: dict = None, combined_delta: dict = None) -> None:
+        """
+        Export a NetworkX graph as a Cytoscape .cys file with additional node attributes.
+
+        Args:
+            graph: NetworkX graph to export
+            output_path: Path where to save the .cys file
+            network_name: Name for the network (default: "network")
+            combined_centrality: Dictionary mapping node names to combined centrality values
+            combined_delta: Dictionary mapping node names to combined delta values
+        """
+        import os
+        import zipfile
+        import tempfile
+
+        # Create a copy of the graph to avoid modifying the original
+        export_graph = graph.copy()
+
+        # Add combined centrality and delta attributes to nodes if provided
+        if combined_centrality:
+            for node in export_graph.nodes():
+                if node in combined_centrality:
+                    export_graph.nodes[node]['Combined Centrality'] = combined_centrality[node]
+
+        if combined_delta:
+            for node in export_graph.nodes():
+                if node in combined_delta:
+                    export_graph.nodes[node]['Combined Delta'] = combined_delta[node]
+
+        # Create a temporary directory for the XGMML file
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Generate XGMML filename
+            xgmml_filename = f"{network_name}.xgmml"
+            xgmml_path = os.path.join(temp_dir, xgmml_filename)
+
+            # Prefer networkxgmml if available, otherwise fall back to NetworkX writers
+            try:
+                import networkxgmml
+                networkxgmml.XGMMLWriter(export_graph, xgmml_path)
+            except Exception:
+                # Fallback: write GraphML (keeps node attributes) or GEXF if GraphML fails
+                try:
+                    import networkx as nx
+                    nx.write_graphml(export_graph, xgmml_path)
+                except Exception:
+                    # As a last resort use GEXF
+                    nx.write_gexf(export_graph, xgmml_path)
+
+            # Create the .cys file (ZIP archive)
+            with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zip_ref:
+                zip_ref.write(xgmml_path, xgmml_filename)
+
+

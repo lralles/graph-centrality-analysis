@@ -256,6 +256,8 @@ class ToolbarView(ttk.Frame):
         self.refresh_plot_button.pack(side=tk.LEFT, padx=(0, 6))
         self.save_button = ttk.Button(actions_frame, text="Save SVG As...")
         self.save_button.pack(side=tk.LEFT, padx=(0, 6))
+        self.export_cys_button = ttk.Button(actions_frame, text="Export CYS...")
+        self.export_cys_button.pack(side=tk.LEFT, padx=(0, 6))
         self.clear_button = ttk.Button(actions_frame, text="Clear")
         self.clear_button.pack(side=tk.LEFT)
 
@@ -265,6 +267,13 @@ class ToolbarView(ttk.Frame):
         self.content_frame.columnconfigure(3, weight=1)
         self.content_frame.rowconfigure(4, weight=1)
         self.content_frame.rowconfigure(4, weight=1)
+
+        # Initially hide the export CYS button
+        self.hide_export_cys_button()
+
+        # Track the loaded file type and path
+        self.loaded_file_path = None
+        self.loaded_file_type = None
 
     def _toggle_collapse(self):
         """Toggle the collapsed state of the configuration section"""
@@ -362,9 +371,37 @@ class ToolbarView(ttk.Frame):
         self.network_label.grid_remove()
         self.network_combo.grid_remove()
 
+    def show_export_cys_button(self):
+        """Show the export CYS button when a CYS file is loaded"""
+        self.export_cys_button.pack(side=tk.LEFT, padx=(0, 6))
+
+    def hide_export_cys_button(self):
+        """Hide the export CYS button when no CYS file is loaded"""
+        self.export_cys_button.pack_forget()
+
     def show_tsv_options(self):
         """Show TSV-specific options"""
         self.tsv_options_frame.grid()
+
+    def set_loaded_file(self, file_path: str, file_type: str):
+        """Set the loaded file information and show/hide export CYS button accordingly"""
+        self.loaded_file_path = file_path
+        self.loaded_file_type = file_type
+
+        if file_type == '.cys':
+            # Show the export CYS button when a CYS file is loaded
+            self.show_export_cys_button()
+        else:
+            # Hide the export CYS button for any non-CYS file
+            self.hide_export_cys_button()
+
+    def is_cys_file_loaded(self) -> bool:
+        """Check if a CYS file is currently loaded"""
+        return getattr(self, 'loaded_file_type', None) == '.cys'
+
+    def get_loaded_file_path(self) -> str:
+        """Get the path of the currently loaded file"""
+        return getattr(self, 'loaded_file_path', None)
 
     def hide_tsv_options(self):
         """Hide TSV-specific options"""

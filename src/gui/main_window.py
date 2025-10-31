@@ -115,6 +115,7 @@ class GraphAnalysisGUI(tk.Tk):
         self.toolbar.run_button.configure(command=self._on_run)
         self.toolbar.refresh_plot_button.configure(command=self._on_refresh_plot)
         self.toolbar.save_button.configure(command=self._on_save_as)
+        self.toolbar.export_cys_button.configure(command=self._on_export_cys)
         self.toolbar.clear_button.configure(command=self._on_clear)
         self.toolbar.set_column_selected_callback(self._on_column_selected)
 
@@ -198,6 +199,7 @@ class GraphAnalysisGUI(tk.Tk):
                 self.toolbar.update_column_suggestions([])
                 self.toolbar.disable_column_selection()
                 self.toolbar.hide_tsv_options()  # Hide TSV-specific options for CYS files
+                self.toolbar.set_loaded_file(path, file_ext)  # Track loaded CYS file
 
                 loader = GraphLoader()
                 networks = loader.get_available_networks(path)
@@ -218,6 +220,7 @@ class GraphAnalysisGUI(tk.Tk):
                 self.toolbar.disable_column_selection()
                 self.toolbar.hide_tsv_options()  # Hide TSV-specific options for GEXF files
                 self.toolbar.hide_network_selector()  # Hide network selector for GEXF files
+                self.toolbar.set_loaded_file(path, file_ext)  # Track loaded GEXF file
 
                 self.status.set_status("Loaded GEXF file")
 
@@ -228,6 +231,7 @@ class GraphAnalysisGUI(tk.Tk):
                 # Hide network selector for non-.cys files
                 self.toolbar.hide_network_selector()
                 self.toolbar.show_tsv_options()  # Show TSV-specific options for TSV files
+                self.toolbar.set_loaded_file(path, file_ext)  # Track loaded TSV file
 
                 df = pd.read_csv(path, sep='\t', nrows=0)
                 columns = df.columns.tolist()
@@ -330,6 +334,69 @@ class GraphAnalysisGUI(tk.Tk):
         except Exception as e:
             messagebox.showerror("Save SVG", str(e))
 
+    def _on_export_cys(self):
+        """Export the current graph with analysis results as a CYS file"""
+        try:
+            # Check if a CYS file is loaded
+            if not self.toolbar.is_cys_file_loaded():
+                messagebox.showwarning("Export CYS", "No CYS file is currently loaded.")
+                return
+
+            # Check if analysis has been run by checking if table has data
+            if self.table.current_data is None or self.table.current_data.empty:
+                messagebox.showwarning("Export CYS", "Run an analysis first to include centrality data.")
+                return
+
+            # Get the save path
+            path = filedialog.asksaveasfilename(
+                title="Export CYS with Analysis Results",
+                defaultextension=".cys",
+                filetypes=[("Cytoscape files", "*.cys")],
+                initialdir=self.last_save_dir,
+                initialfile="analysis_results.cys",
+            )
+            if not path:
+                return
+
+            self.last_save_dir = os.path.dirname(path)
+
+            # Get the analysis results from the table
+            analysis_df = self.table.current_data
+
+            # Extract combined centrality and delta values
+            combined_centrality = {}
+            combined_delta = {}
+
+            for node in analysis_df.index:
+                if 'Combined' in analysis_df.columns:
+                    combined_centrality[node] = analysis_df.loc[node, 'Combined']
+                if 'Δ Combined' in analysis_df.columns:
+                    combined_delta[node] = analysis_df.loc[node, 'Δ Combined']
+
+            # Get the current graph from the controller
+            # We need to load the original graph again to get the full structure
+            loader = GraphLoader()
+            original_file_path = self.toolbar.get_loaded_file_path()
+            network_name = self.toolbar.get_selected_network()
+
+            # Load the original graph
+            original_graph = loader.load("", "", "", original_file_path,
+                                       remove_self_edges=False,
+                                       network_name=network_name)
+
+            # Export the CYS file with the analysis results
+            loader.export_cys(original_graph, path,
+                             network_name=network_name or "network",
+                             combined_centrality=combined_centrality,
+                             combined_delta=combined_delta)
+
+            self.status.set_status(f"Exported CYS with analysis results: {path}")
+            messagebox.showinfo("Export CYS", f"Successfully exported CYS file with Combined Centrality and Combined Delta attributes to:\n{path}")
+
+        except Exception as e:
+            messagebox.showerror("Export CYS Error", str(e))
+            self.status.set_status("Error exporting CYS file")
+
     def _on_clear(self):
         self.table.clear()
         self.adjacency_list.clear()
@@ -337,6 +404,8 @@ class GraphAnalysisGUI(tk.Tk):
         self.toolbar.clear_node_selector()
         self.toolbar.hide_tsv_options()  # Hide TSV options when clearing
         self.toolbar.hide_network_selector()  # Hide network selector when clearing
+        self.toolbar.hide_export_cys_button()  # Hide export CYS button when clearing
+        self.toolbar.set_loaded_file(None, None)  # Reset file tracking
         self.last_analysis_result = None
         # Hide both views when clearing
         self.table.pack_forget()
