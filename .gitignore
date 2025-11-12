@@ -6,5 +6,5 @@ pandas
 build
 dist
 Read from TSV.svg
-.spec
-.cys
+*.spec
+*.cys
