@@ -1,15 +1,16 @@
 from itertools import product
+from tkinter import NONE
 import networkx as nx
 
 # graph types being tested - additions here must be reflected in the get_graph_and_node_to_remove method (bellow)
 GRAPH_TYPES = [
-    #"erdos_renyi", 
-    #"watts_strogatz", 
+    "erdos_renyi", 
+    "watts_strogatz", 
     "barabasi_albert"
 ]
 
 # graph sizes being tested
-SIZES = [100]
+SIZES = [10, 100]
 
 # centrality metrics being tested (each method takes a graph G as input)
 CENTRALITY_METRICS = {
@@ -33,7 +34,7 @@ analysis_config = [
 ]
 
 
-def get_graph_and_node_to_remove(graph_type, size):
+def get_graph_and_node_to_remove(graph_type, size, seed=None):
     match graph_type:
         case "path":
             G = nx.path_graph(size)
@@ -62,25 +63,14 @@ def get_graph_and_node_to_remove(graph_type, size):
             # in this graph, the nodes are indexed as tuples, so this is the middle node
             node = (grid_size // 2, grid_size // 2)
         case "erdos_renyi":
-            # p (probability of 2 nodes being connected) goes down as the size goes up
-            # keeps the amount of connections a node has relatively constant
             c = 5
             p = c / size
-            G = nx.erdos_renyi_graph(size, p)
-            # remove node with highest degree
-            node = max(G.degree, key=lambda x: x[1])[0]
-        case "watts_strogatz":
-            # regulate network density
-            k = max(2, size // 50)
-            G = nx.watts_strogatz_graph(size, k, 0.3) # 0.3 (between 0.1 and 0.5)
-            # remove node with highest degree
-            node = max(G.degree, key=lambda x: x[1])[0]
+            G = nx.erdos_renyi_graph(size, p, seed=seed, directed=False)
         case "barabasi_albert":
-            # regulate network density
             m = max(2, size // 50)
-            G = nx.barabasi_albert_graph(size, m)
-            # remove node with highest degree
-            node = max(G.degree, key=lambda x: x[1])[0]
-        case _:
-            raise ValueError(f"Unknown graph type: {graph_type}")
+            G = nx.barabasi_albert_graph(size, m, seed=seed)        
+        case "watts_strogatz":
+            k = max(2, size // 50)
+            G = nx.watts_strogatz_graph(size, k, 0.3, seed=seed)
+
     return G, node

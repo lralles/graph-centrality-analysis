@@ -115,6 +115,7 @@ centrality_functions = {
 
 class CentralityAnalysisService:
     def compute(self, G: nx.Graph, removed_nodes, selected_centralities) -> tuple[pd.DataFrame, dict[Any, float], dict[str, float]]:
+        start_time = time.time()
         # Calculate diameter before node removal
         diameter_before = calculate_diameter(G)
 
@@ -175,6 +176,8 @@ class CentralityAnalysisService:
             centrality_table[node] = row_data
 
         df = pd.DataFrame.from_dict(centrality_table, orient="index")
-        return df, overall_centrality_delta, diameter_info
+
+        elapsed_time = time.time() - start_time
+        return elapsed_time, df, overall_centrality_delta, diameter_info
 
 
