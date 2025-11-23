@@ -4,7 +4,8 @@ numpy
 pandas
 dist
 build
-Read from TSV.svg
+*.svg
+*.pdf
 *.cys
 *.spec
 *.gexf

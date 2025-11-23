@@ -325,10 +325,6 @@ class GraphAnalysisGUI(tk.Tk):
                 return
 
             self.last_save_dir = os.path.dirname(path)
-            file_path = self.toolbar.file_var.get().strip()
-            if not file_path:
-                messagebox.showwarning("Save SVG", "Run an analysis first.")
-                return
             self.plot.figure.savefig(path, dpi=300, bbox_inches='tight', facecolor='white', format='svg')
             self.status.set_status(f"Saved: {path}")
         except Exception as e:
