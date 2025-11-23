@@ -136,8 +136,9 @@ class GraphAnalysisController:
         removed_nodes_str = self.app.toolbar.get_selected_nodes()
         selected_centralities = [k for k, v in self.app.toolbar.centrality_vars.items() if v.get()]
 
+        # If no nodes are selected, use an empty list to show centrality for all nodes
         if not removed_nodes_str:
-            raise ValueError("Please select at least one node to remove")
+            removed_nodes_str = []
         if not selected_centralities:
             raise ValueError("Please select at least one centrality measure")
 
@@ -217,10 +218,14 @@ class GraphAnalysisController:
             pass
 
         # Create a readable list of removed nodes
-        removed_nodes_str = ", ".join(str(node) for node in removed_nodes)
+        if removed_nodes:
+            removed_nodes_str = ", ".join(str(node) for node in removed_nodes)
+            label = f"Removed Nodes: {removed_nodes_str}"
+        else:
+            label = "All Nodes (No Removal)"
 
         result = {
-            "label": f"Removed Nodes: {removed_nodes_str}",
+            "label": label,
             "gtype": file_type,
             "impact": impact,
             "graph": G,

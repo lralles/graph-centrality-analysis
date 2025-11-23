@@ -7,11 +7,11 @@ import networkx as nx
 def get_node_removal_impact(graph, nodes_to_remove, centrality_metric_function):
     """
      Calculate the impact of removing specific nodes on the centrality of remaining nodes.
-    
+
     This function computes how the centrality values of nodes in a graph change when
     a specified set of nodes is removed. It measures the difference between the original
     centrality and the new centrality after node removal.
-    
+
     Parameters
     ----------
     graph : networkx.Graph
@@ -28,6 +28,12 @@ def get_node_removal_impact(graph, nodes_to_remove, centrality_metric_function):
     start_time = time.time()
 
     original_centrality = centrality_metric_function(graph)
+
+    # If no nodes to remove, return original centrality with zero impact
+    if not nodes_to_remove:
+        impact = {node: 0.0 for node in original_centrality}
+        elapsed_time = time.time() - start_time
+        return elapsed_time, impact, original_centrality
 
     temp_graph = graph.copy()
     for node in nodes_to_remove:
