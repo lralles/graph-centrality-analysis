@@ -115,7 +115,11 @@ centrality_functions = {
     "betweenness": nx.betweenness_centrality,
     "closeness": nx.closeness_centrality,
     "eigenvector": lambda G: nx.eigenvector_centrality(G, max_iter=5000),
-    "katz": lambda G: nx.katz_centrality_numpy(G, alpha=0.01, beta=1.0),
+    "katz": lambda G: nx.katz_centrality(
+        G, 
+        alpha=0.85 / max(abs(np.linalg.eigvals(nx.adjacency_matrix(G).toarray()))),
+        beta=1.0
+    )
 }
 
 
