@@ -3,6 +3,7 @@ import time
 import numpy as np
 import pandas as pd
 import networkx as nx
+from scipy.sparse.linalg import eigs
 
 def get_node_removal_impact(graph, nodes_to_remove, centrality_metric_function):
     """
@@ -115,11 +116,13 @@ centrality_functions = {
     "betweenness": nx.betweenness_centrality,
     "closeness": nx.closeness_centrality,
     "eigenvector": lambda G: nx.eigenvector_centrality(G, max_iter=5000),
-    "katz": lambda G: nx.katz_centrality(
-        G, 
-        alpha=0.85 / max(abs(np.linalg.eigvals(nx.adjacency_matrix(G).toarray()))),
-        beta=1.0
-    )
+    "katz": lambda G: (
+        lambda A: nx.katz_centrality(
+            G,
+            alpha=0.8 / float(abs(eigs(A, k=1, which="LM", return_eigenvectors=False)[0])),
+            beta=1
+        )
+    )(nx.adjacency_matrix(G))
 }
 
 
